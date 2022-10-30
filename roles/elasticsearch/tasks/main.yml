@@ -1,0 +1,38 @@
+---
+- name: import elastichsearch GPG key
+  shell:
+    cmd: "wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo gpg --dearmor -o /usr/share/keyrings/elasticsearch-keyring.gpg"
+  become: yes
+  tags: [import_gpg_key]
+
+- name: installing apt-trasport-https
+  apt:
+    name: apt-transport-https
+    state: latest
+    update_cache: yes
+  become: yes
+  become_user: root
+  become_method: sudo
+  tags: [install_apt_transport_https]
+
+- name: add elasticsearch repository to /etc/apt/sources.list.d/
+  template:
+    src: elastic-7.x.list.j2
+    dest: /etc/apt/sources.list.d/elastic-7.x.list
+  become: yes
+  become_user: root
+  become_method: sudo
+  tags: [add_elasticsearch_repo]
+
+- name: install elasticsearch
+  apt:
+    name: elasticsearch
+    update_cache: yes
+    state: latest
+  become: yes
+  become_user: root
+  become_method: sudo
+  notify: 
+  - enable elasticsearch
+  - restart elasticsearch
+  tags: [install_elasticsearch]

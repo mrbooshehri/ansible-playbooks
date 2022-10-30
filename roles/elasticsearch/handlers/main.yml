@@ -1,0 +1,9 @@
+---
+- name: restart elasticsearch
+  service:
+    name: elasticsearch
+    state: restarted
+  become: yes
+  become_user: root
+  become_method: sudo
+  tags: [restart_elasticsearch]
