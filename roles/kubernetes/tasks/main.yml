@@ -1,0 +1,150 @@
+---
+# RPM Based ######################################
+- name: Add Repository on CentOS
+  template:
+    src: kubernetes.repo.j2
+    dest: /etc/yum.repos.d/kubernetes.repo
+  tags: add_repo
+  when: ansible_distribution == "CentOS"
+
+- name: Update Package Cache (yum/CentOS)
+  tags: always
+  yum:
+    update_cache: yes
+  changed_when: false
+  when: ansible_distribution == "CentOS"
+
+#- name: Install cotainerd, kubelet, kubeadm, and kubectl
+#  yum:
+#    name: "{{ item }}"
+#    state: present
+#  loop:
+#    - containerd
+#    - kubelet
+#    - kubeadm
+#    - kubectl 
+#  tags: install_bins
+#  when: ansible_distribution == "CentOS"
+
+## On master node only
+- name: Configure Firewall
+  firewalld:
+    port: "{{ item }}"
+    permanent: yes
+    state: enabled
+  loop:
+    - 6443/tcp
+    - 2379-2380/tcp
+    - 10250/tcp
+    - 10251/tcp
+    - 10252/tcp
+    - 10255/tcp
+  when: ansible_distribution == "CentOS"
+
+## On workder node only
+- name: Configure Firewall
+  firewalld:
+    port: "{{ item }}"
+    permanent: yes
+    state: enabled
+  loop:
+    - 10251/tcp
+    - 10255/tcp
+  when: ansible_distribution == "CentOS"
+    
+- name: Enable firewalld service
+  service:
+    name: firewalld
+    state: restarted
+    enabled: true
+  when: ansible_distribution == "CentOS"
+
+- name: Update Iptables Settings
+  blockinfile:
+    path: /etc/sysctl.d/k8s.conf
+    backup: yes
+    block: |
+      net.bridge.bridge-nf-call-ip6tables = 1
+      net.bridge.bridge-nf-call-iptables = 1
+  when: ansible_distribution == "CentOS"
+
+- name: Reload sysctl
+  command: sysctl --system
+
+# Debian Based ###################################
+- name: Update Packages Cache (apt/debian)
+  tags: always
+  apt:
+    update_cache: yes
+  changed_when: false
+  when: ansible_distribution == "Ubuntu"
+
+
+# General ########################################
+- name: Disable SELiux
+  selinux:
+    state: disabled
+
+- name: Ensure SELinux is set to disabled mode
+  ansible.builtin.lineinfile:
+    path: /etc/selinux/config
+    regexp: '^SELINUX='
+    line: SELINUX=disabled
+
+- name: Enable kubelet service
+  service:
+    name: kubelet
+    state: started
+    enabled: true
+
+- name: Enable kubelet service
+  service:
+    name: containerd
+    state: started
+    enabled: true
+
+- name: Disable SWAP since
+  shell: |
+    swapoff -a
+
+- name: Disable SWAP in fstab
+  replace:
+    path: /etc/fstab
+    regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+    replace: '# \1'
+
+# - name: Set hostname dynamically
+- name: Add mappings to /etc/hosts
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    block: |
+      {{ item.ip }} {{ item.name }}
+    marker: "# {mark} ANSIBLE MANAGED BLOCK {{ item.name }}"
+  loop:
+    - { name: host1, ip: 10.10.1.10 }
+    - { name: host2, ip: 10.10.1.11 }
+    - { name: host3, ip: 10.10.1.12 }
+
+# Configuring Kube-Master ########################
+- name: Initial Kube-Master
+  command: kubeadm init --pod-network-cidr="{{ item }}"
+  # command: kubeadm init --pod-network-cidr=10.244.0.0/16
+  loop:
+    - 10.244.0.0/16
+
+- name: Manage Cluster as Regular User (1/2)
+  file:
+    path: /roo/.kube
+    state: directory
+
+- name: Manage Cluster as Regular User (2/2)
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /root/.kube/config
+    owner: root 
+    group: root 
+
+- name: Setup flannel CNI
+  command: kubectl apply -f "{{ item }}"
+  loop:
+    - https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
