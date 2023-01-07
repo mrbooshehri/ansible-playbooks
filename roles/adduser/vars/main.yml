@@ -1,0 +1,9 @@
+user_info:
+  - {username: app, password: 123456}
+  - {username: devops, password: 123456}
+  - {username: dev, password: 123456}
+  - {username: data, password: 123456}
+  - {username: sup, password: 123456}
+
+root_password:
+  - 123456

@@ -1,0 +1,35 @@
+---
+- name: add users in a Ubuntu/Deiban host
+  user:
+    name: {{user_info.username}}
+    password: {{user_info.password}}
+    groups: sudo
+    status: present
+    append: yes
+    generate_ssh_key: yes
+    ssh_key_bits: 2048
+    ssh_key_file: ~/.ssh/id_rsa
+  loop: {{user_info}}
+  when: ansible_distribution == "Ubuntu"
+  tags: [adduser_ubuntu]
+
+- name: add users in a CentOS/RHEL host
+  user:
+    name: {{user_info.username}}
+    password: {{user_info.password}}
+    groups: wheel
+    status: present
+    append: yes
+    generate_ssh_key: yes
+    ssh_key_bits: 2048
+    ssh_key_file: ~/.ssh/id_rsa
+  loop: {{user_info}}
+  when: ansible_distribution == "CentOS"
+  tags: [adduser_centos]
+
+- name: change root password
+  user:
+    name: root
+    password: {{root_password}}
+    status: present
+  tags: [change_root_password]
