@@ -1,8 +1,8 @@
 ---
 - name: add users in a Ubuntu/Deiban host
   user:
-    name: {{user_info.username}}
-    password: {{user_info.password}}
+    name: {{item.username}}
+    password: {{item.password}}
     groups: sudo
     status: present
     append: yes
@@ -15,8 +15,8 @@
 
 - name: add users in a CentOS/RHEL host
   user:
-    name: {{user_info.username}}
-    password: {{user_info.password}}
+    name: {{item.username}}
+    password: {{item.password}}
     groups: wheel
     status: present
     append: yes
