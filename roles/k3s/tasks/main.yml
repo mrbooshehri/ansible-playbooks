@@ -1,0 +1,297 @@
+---
+- name: Download k3s binary x64
+  ansible.builtin.get_url:
+    url: https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/k3s
+    checksum: sha256:https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/sha256sum-amd64.txt
+    dest: /usr/local/bin/k3s
+    owner: root
+    group: root
+    mode: 0755
+  when: ansible_facts.architecture == "x86_64"
+  tags:
+    - download
+    - download_x64
+
+- name: Download k3s binary arm64
+  ansible.builtin.get_url:
+    url: https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/k3s-arm64
+    checksum: sha256:https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/sha256sum-arm64.txt
+    dest: /usr/local/bin/k3s
+    owner: root
+    group: root
+    mode: 0755
+  when:
+    - ( ansible_facts.architecture is search("arm") and
+      ansible_facts.userspace_bits == "64" ) or
+      ansible_facts.architecture is search("aarch64")
+  tags:
+    - download
+    - download_arm64
+- name: Download k3s binary armhf
+  ansible.builtin.get_url:
+    url: https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/k3s-armhf
+    checksum: sha256:https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/sha256sum-arm.txt
+    dest: /usr/local/bin/k3s
+    owner: root
+    group: root
+    mode: 0755
+  when:
+    - ansible_facts.architecture is search("arm")
+    - ansible_facts.userspace_bits == "33"
+  tags:
+    - download
+    - download_armhf
+
+- name: Set SELinux to disabled state
+  ansible.posix.selinux:
+    state: disabled
+  when: ansible_distribution in ['CentOS', 'Red Hat Enterprise Linux']
+  tags:
+    - prepareation
+    - disable_selinux
+
+- name: Enable IPv4 forwarding
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    state: present
+    reload: true
+  tags:
+    - prepareation
+    - enable_ipv4_forwarding
+
+- name: Enable IPv6 forwarding
+  ansible.posix.sysctl:
+    name: net.ipv6.conf.all.forwarding
+    value: "1"
+    state: present
+    reload: true
+  when: ansible_all_ipv6_addresses
+  tags:
+    - prepareation
+    - enable_ipv6_forwarding
+
+- name: Add br_netfilter to /etc/modules-load.d/
+  ansible.builtin.copy:
+    content: "br_netfilter"
+    dest: /etc/modules-load.d/br_netfilter.conf
+    mode: "u=rw,g=,o="
+  when: ansible_distribution in ['CentOS', 'Red Hat Enterprise Linux']
+  tags:
+    - prepareation
+    - add_br_netfilter
+
+- name: Load br_netfilter
+  community.general.modprobe:
+    name: br_netfilter
+    state: present
+  when: ansible_distribution in ['CentOS', 'Red Hat Enterprise Linux']
+  tags:
+    - prepareation
+    - load_br_netfilter
+
+- name: Set bridge-nf-call-iptables (just to be sure)
+  ansible.posix.sysctl:
+    name: "{{ item }}"
+    value: "1"
+    state: present
+    reload: true
+  when: ansible_distribution in ['CentOS', 'Red Hat Enterprise Linux']
+  loop:
+    - net.bridge.bridge-nf-call-iptables
+    - net.bridge.bridge-nf-call-ip6tables
+  tags:
+    - prepareation
+    - iptables
+
+- name: Add /usr/local/bin to sudo secure_path
+  ansible.builtin.lineinfile:
+    line: "Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin"
+    regexp: "Defaults(\\s)*secure_path(\\s)*="
+    state: present
+    insertafter: EOF
+    path: /etc/sudoers
+    validate: "visudo -cf %s"
+  when: ansible_distribution in ['CentOS', 'Red Hat Enterprise Linux']
+  tags:
+    - prepareation
+
+- name: Copy K3s service file
+  register: k3s_service
+  ansible.builtin.template:
+    src: "master-k3s.service.j2"
+    dest: "{{ systemd_dir }}/k3s.service"
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - master
+
+- name: Enable and check K3s service
+  ansible.builtin.systemd:
+    name: k3s
+    daemon_reload: true
+    state: restarted
+    enabled: true
+  tags:
+    - master
+
+- name: Wait for node-token
+  ansible.builtin.wait_for:
+    path: "{{ k3s_server_location }}/server/node-token"
+  tags:
+    - master
+
+- name: Register node-token file access mode
+  ansible.builtin.stat:
+    path: "{{ k3s_server_location }}/server/node-token"
+  register: p
+  tags:
+    - master
+
+- name: Change file access node-token
+  ansible.builtin.file:
+    path: "{{ k3s_server_location }}/server/node-token"
+    mode: "g+rx,o+rx"
+  tags:
+    - master
+
+- name: Read node-token from master
+  ansible.builtin.slurp:
+    path: "{{ k3s_server_location }}/server/node-token"
+  register: node_token
+  tags:
+    - master
+
+- name: Store Master node-token
+  ansible.builtin.set_fact:
+    token: "{{ node_token.content | b64decode | regex_replace('\n', '') }}"
+  tags:
+    - master
+
+- name: Restore node-token file access
+  ansible.builtin.file:
+    path: "{{ k3s_server_location }}/server/node-token"
+    mode: "{{ p.stat.mode }}"
+  tags:
+    - master
+
+- name: Create directory .kube
+  ansible.builtin.file:
+    path: ~{{ ansible_user }}/.kube
+    state: directory
+    owner: "{{ ansible_user }}"
+    mode: "u=rwx,g=rx,o="
+  tags:
+    - master
+
+- name: Copy config file to user home directory
+  ansible.builtin.copy:
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: ~{{ ansible_user }}/.kube/config
+    remote_src: true
+    owner: "{{ ansible_user }}"
+    mode: "u=rw,g=,o="
+  tags:
+    - master
+
+- name: Replace https://localhost:6443 by https://master-ip:6443
+  ansible.builtin.command: >-
+    k3s kubectl config set-cluster default
+      --server=https://{{ master_ip }}:6443
+      --kubeconfig ~{{ ansible_user }}/.kube/config
+  changed_when: true
+  tags:
+    - master
+
+- name: Create kubectl symlink
+  ansible.builtin.file:
+    src: /usr/local/bin/k3s
+    dest: /usr/local/bin/kubectl
+    state: link
+  tags:
+    - master
+
+- name: Create crictl symlink
+  ansible.builtin.file:
+    src: /usr/local/bin/k3s
+    dest: /usr/local/bin/crictl
+    state: link
+  tags:
+    - master
+
+- name: Copy K3s service file
+  ansible.builtin.template:
+    src: "node-k3s.service.j2"
+    dest: "{{ systemd_dir }}/k3s-node.service"
+    owner: root
+    group: root
+    mode: 0755
+  tags:
+    - node
+
+- name: Enable and check K3s service
+  ansible.builtin.systemd:
+    name: k3s-node
+    daemon_reload: true
+    state: restarted
+    enabled: true
+  tags:
+    - node
+
+- name: Disable services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+  failed_when: false
+  with_items:
+    - k3s
+    - k3s-node
+  tags:
+    - reset
+    - uninstall
+
+- name: Kill containerd-shim-runc"
+  register: pkill_containerd_shim_runc
+  ansible.builtin.command: pkill -9 -f "k3s/data/[^/]+/bin/containerd-shim-runc"
+  changed_when: "pkill_containerd_shim_runc.rc == 0"
+  failed_when: false
+  tags:
+    - reset
+    - uninstall
+
+- name: Umount k3s filesystems
+  ansible.builtin.include_tasks: umount_with_children.yml
+  with_items:
+    - /run/k3s
+    - /var/lib/kubelet
+    - /run/netns
+    - /var/lib/rancher/k3s
+  loop_control:
+    loop_var: mounted_fs
+  tags:
+    - reset
+    - uninstall
+
+- name: Remove service files, binaries and data
+  ansible.builtin.file:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - /usr/local/bin/k3s
+    - "{{ systemd_dir }}/k3s.service"
+    - "{{ systemd_dir }}/k3s-node.service"
+    - /etc/rancher/k3s
+    - /var/lib/kubelet
+    - /var/lib/rancher/k3s
+  tags:
+    - reset
+    - uninstall
+
+- name: Perform [daemon_reload]
+  ansible.builtin.systemd:
+    daemon_reload: true
+  tags:
+    - reset
+    - uninstall
