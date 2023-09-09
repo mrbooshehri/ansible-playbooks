@@ -1,0 +1,17 @@
+# UDP Connection
+#*.*@{{graylog_server}}:{{graylog_port}};RSYSLOG_SyslogProtocol23Format
+# TCP Connection
+#*.*@@{{graylog_server}}:{{graylog_port}};RSYSLOG_SyslogProtocol23Format
+
+if $programname contains "LnxCmd" then {
+	#action(type="omfwd" target="{{graylog_server}}" port="{{graylog_port}}" protocol="{{graylog_porotocol}}")
+	*.*@{{graylog_server}}:{{graylog_port}};RSYSLOG_SyslogProtocol23Format
+	*.*@@{{graylog_server}}:{{graylog_port}};RSYSLOG_SyslogProtocol23Format
+}
+
+if $programname != "logstash" and $msg contains_i "session" then {
+	#action(type="omfwd" target="{{graylog_server}}" port="{{graylog_port}}" protocol="{{graylog_porotocol}}")
+	*.*@{{graylog_server}}:{{graylog_port}};RSYSLOG_SyslogProtocol23Format
+	*.*@@{{graylog_server}}:{{graylog_port}};RSYSLOG_SyslogProtocol23Format
+}
+ 

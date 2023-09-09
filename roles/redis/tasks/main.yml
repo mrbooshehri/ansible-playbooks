@@ -1,0 +1,33 @@
+---
+- name: Configure DNS
+  resolv_conf:
+    nameservers:
+      - 8.8.8.8
+      - 8.8.4.4
+  tags:
+    - set_nameserver
+  
+- name: Install Redis
+  apt:
+    name: redis-server
+    state: present
+    update_cache: true
+  tags: 
+    - install
+
+- name: Configure Master Redis
+  template:
+    src: master.conf.j2
+    dest: /etc/redis/redis.conf
+  notify: Restart Redis
+  tags: 
+    - configure
+
+- name: Configure Slave Redis
+  template:
+    src: slave.conf.j2
+    dest: /etc/redis/redis.conf
+  notify: Restart Redis
+  tags: 
+    - configure
+

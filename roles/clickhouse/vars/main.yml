@@ -1,0 +1,20 @@
+nodes:
+  - name: "elk01"
+    ip: 192.168.171.65
+  - name: "elk02"
+    ip: 192.168.171.66
+  - name: "elk03"
+    ip: 192.168.171.67
+
+key_server: "hkp://keyserver.ubuntu.com:80"
+dep_repo_key: "8919F6BD2B48D754"
+dep_repo: "https://packages.clickhouse.com/deb"
+rpm_repo: "https://packages.clickhouse.com/rpm/clickhouse.repo"
+user: "clickhouse"
+group: "{{ user}}"
+conf_dir: "/etc/clickhouse-server"
+path: "/var/lib/clickhouse"
+user_files_path: "{{ path }}/user_files"
+access_control_path: "{{ path }}/access"
+tmp_path: "{{ path }}/tmp"
+log_directory: "{{ path }}/logs"

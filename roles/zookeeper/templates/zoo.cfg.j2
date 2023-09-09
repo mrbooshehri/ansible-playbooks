@@ -1,0 +1,8 @@
+tickTime=2000
+initLimit=10
+syncLimit=5
+dataDir={{ data }}
+clientPort=2181
+{% for node in nodes %}
+server.{{ loop.index }}={{ node }}:2888:3888
+{% endfor %}

@@ -1,0 +1,64 @@
+---
+- name: Log into vasl docker registry (registry.vaslapp.com)
+  docker_login:
+    registry: registry.vaslapp.com
+    username: "{{ DOCKER_USERNAME }}"
+    password: "{{ DOCKER_PASSWORD }}"
+      #password: "{{ DOCKER_PASSWORD | string | password_hash('sha512') }}"
+  tags:
+    - login_registry
+
+- name: Pull graylog images
+  docker_image:
+    name: "{{ item }}"
+    source: pull
+  loop:
+    - registry.vaslapp.com/docker/vasl/graylog/mongo:5.0
+    - registry.vaslapp.com/docker/vasl/graylog/opensearch:2.4.0
+    - registry.vaslapp.com/docker/vasl/graylog/graylog:5.0
+  tags:
+    - pull_images
+
+- name: Creates graylog home directory
+  file:
+    path: "{{ GRAYLOG_HOME }}"
+    state: directory
+
+- name: copy docker-compose and .env
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ GRAYLOG_HOME }}/{{ item.dest }}"
+  loop:
+    - { src: "docker-compose.yml.j2", dest: docker-compose.yml }
+    - { src: "env.j2", dest: .env }
+
+- name: Creates graylog docker volumes
+  file:
+    path: "{{ GRAYLOG_HOME }}/{{ item.dir }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "1100"
+  loop:
+    - { dir: "graylog_config", owner: 1100 }
+    - { dir: "graylog_data", owner: 1100 }
+    - { dir: "graylog_journal", owner: 1100 }
+    - { dir: "mongodb_data", owner: 1000 }
+    - { dir: "os_data", owner: 1000 }
+
+- name: Copy graylog_config files
+  copy:
+    src: "{{ item }}"
+    dest: "{{ GRAYLOG_HOME }}/graylog_config/{{ item }}"
+    owner: "1100"
+    group: "1100"
+  loop:
+    - graylog.conf
+    - log4j2.xml
+    - node-id
+
+- name: Create and start services
+  docker_compose:
+    project_src: "{{ GRAYLOG_HOME }}"
+  register: output
+- debug:
+    var: output

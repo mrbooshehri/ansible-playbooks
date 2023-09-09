@@ -1,0 +1,229 @@
+---
+- name: configuration
+  tags:
+    - configuration
+  block:
+    - name: Delete file contents
+      community.general.filesize:
+        path: /etc/resolv.conf
+        size: 0
+
+    - name: Add nameserver lines
+      lineinfile:
+        path: /etc/resolv.conf
+        line: "nameserver {{ item }}"
+      loop:
+        - 178.22.122.100
+        - 185.51.200.2
+   
+    - name: Set hostname
+      hostname:
+        name: "{{ item.name }}"
+      when: "ansible_host == '{{ item.ip }}'"
+      loop: "{{ nodes }}"
+      tags:
+        - set_hostname
+
+    - name: Add mongo nodes to /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ item.ip }} {{ item.name }}"
+      loop: "{{ nodes }}"
+      tags:
+        - etc_hosts
+   
+- name: Ubuntu/Debian
+  when: ansible_distribution in ["Ubuntu", "debian"]
+  tags:
+    - install_mongodb
+  block:
+    - name: Add MongoDB GPG key
+      apt_key:
+        url: https://www.mongodb.org/static/pgp/server-4.4.asc
+        state: present
+      tags:
+        - install
+        - add_key
+
+    - name: Add MongoDB repository
+      apt_repository:
+        repo: "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu {{ ansible_distribution_release }}/mongodb-org/4.4 multiverse"
+        state: present
+        filename: mongodb
+      tags:
+        - install
+        - add_repo
+
+    - name: Install MongoDB
+      apt:
+        update_cache: true
+        name: mongodb-org
+        state: latest
+      tags:
+        - install
+
+- name: Ubuntu/Debian
+  when: ansible_distribution in ["Ubuntu", "debian"]
+  tags:
+    - install_mongos
+  block:
+    - name: Add monogDB User
+      user:
+        name: "{{ mongo.username }}"
+        state: present
+        shell: /sbin/nologin
+        system: yes
+      tags:
+        - add_user
+
+    - name: Add /var/log/mongodb directory
+      file:
+        path: /var/log/mongodb
+        state: directory
+        owner: "{{ mongo.username }}"
+        group: "{{ mongo.username }}"
+
+    - name: Add MongoDB GPG key
+      apt_key:
+        url: https://www.mongodb.org/static/pgp/server-4.4.asc
+        state: present
+
+    - name: Add MongoDB repository
+      apt_repository:
+        repo: "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu {{ ansible_distribution_release }}/mongodb-org/4.4 multiverse"
+        state: present
+        filename: mongodb
+
+    - name: Install MongoDB packages
+      apt:
+        name: "{{ item }}"
+        update_cache: true
+        state: present
+      loop:
+        - mongodb-org-shell 
+        - mongodb-org-mongos
+      tags:
+        - install_mgs
+
+    - name: Copy Systemd Unit
+      template:
+        src: mongos.service.j2
+        dest: /lib/systemd/system/mongos.service
+      tags:
+        - copy_servic
+        - cp_svc
+
+    - name: Copy Systemd Unit
+      template:
+        src: mongos.conf.j2
+        dest: /etc/mongos.conf
+      tags:
+        - copy_conf
+        - cp_cfg
+
+    - name: start mongos.service
+      ansible.builtin.systemd:
+        name: mongos
+        enabled: true
+        state: started
+        daemon_reload: true
+      tags:
+        - start_svc
+
+- name: CentOs/RHEL
+  when: ansible_distribution == 'RedHat' or ansible_distribution == 'CentOS'
+  tags:
+    - install_mongod
+  block:
+    - name: Add MongoDB GPG key
+      rpm_key:
+        key: https://www.mongodb.org/static/pgp/server-4.4.asc
+        state: present
+      tags:
+        - install
+        - add_key
+
+    - name: Add MongoDB repository
+      yum_repository:
+        name: mongodb-org-4.4
+        description: MongoDB Repository
+        baseurl: https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/4.4/x86_64/
+        gpgcheck: yes
+        enabled: yes
+        gpgkey: https://www.mongodb.org/static/pgp/server-4.4.asc
+      tags:
+        - install
+        - add_repo
+
+    - name: Install MongoDB packages
+      yum:
+        name: mongodb-org
+        update_cache: true
+        state: latest
+      tags:
+        - install
+
+- name: CentOs/RHEL
+  when: ansible_distribution == 'RedHat' or ansible_distribution == 'CentOS'
+  tags:
+    - install_mongos
+  block:
+    - name: Add monogDB User
+      user:
+        name: "{{ mongo.username }}"
+        state: present
+        shell: /sbin/nologin
+        system: yes
+      tags:
+        - add_user
+
+    - name: Add /var/log/mongodb directory
+      file:
+        path: /var/log/mongodb
+        state: directory
+        owner: "{{ mongo.username }}"
+        group: "{{ mongo.username }}"
+
+    - name: Add MongoDB GPG key
+      rpm_key:
+        key: https://www.mongodb.org/static/pgp/server-4.4.asc
+        state: present
+
+    - name: Add MongoDB repository
+      yum_repository:
+        name: mongodb-org-4.4
+        description: MongoDB Repository
+        baseurl: https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/4.4/x86_64/
+        gpgcheck: yes
+        enabled: yes
+        gpgkey: https://www.mongodb.org/static/pgp/server-4.4.asc
+
+    - name: Install MongoDB packages
+      yum:
+        name: "{{ item }}"
+        update_cache: true
+        state: latest
+        loop:
+          - mongodb-org-shell
+          - mongodb-org-mongos
+
+- name: Mongo Config Replica set Configuration
+  tags:
+    - mongoc_conf
+  block:
+    - name: Create Data Directory
+      file:
+        state: directory
+        path: " {{ mongo.data }}"
+        owner: "{{ mongo.username }}"
+        group: "{{ mongo.username }}"
+
+    - name: Copy mongoc conf
+      template:
+        src: mongoc.conf.j2
+        dest: /etc/mongod.conf
+        mode: 644
+      notify: Start Mongodb
+
+        config_db_string: "replconfig01/{% for node in nodes | selectattr('type', 'equalto', 'config') %}{{ node.name }}{% if not loop.last %},{% endif %}{% endfor %}"
+

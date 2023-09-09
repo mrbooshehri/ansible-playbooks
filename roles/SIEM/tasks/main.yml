@@ -1,0 +1,56 @@
+---
+- name: Delete a graylog.conf
+  file:
+    path: /etc/rsyslog.d/graylog.conf
+    state: absent
+  tags:
+    - graylog_conf
+
+- name: Copy graylog config file
+  ansible.builtin.template:
+    src: graylog.conf.j2
+    dest: /etc/rsyslog.d/30-graylog.conf
+    owner: root
+    group: root
+    mode: 644
+    backup: true
+  notify: Restart Service rsyslog
+  tags:
+    - graylog_conf
+
+- name: Copy haproxy config file
+  ansible.builtin.template:
+    src: haproxy.conf.j2
+    dest: /etc/rsyslog.d/49-haproxy.conf
+    owner: root
+    group: root
+    mode: 644
+    backup: true
+  notify: Restart Service rsyslog
+  when: inventory_hostname in groups['ha']
+  tags:
+    - haproxy_conf
+
+- name: Add executed commands to rsyslog
+  ansible.builtin.lineinfile:
+    state: present
+    path: "{{ '/etc/bashrc' if ansible_distribution in ['CentOS', 'RedHat', 'OracleLinux' ,'Rocky'] else '/etc/bash.bashrc' }}"
+    regexp: "^export PROMPT_COMMAND="
+    line: |
+      export PROMPT_COMMAND='history -a >(tee -ia ~/.bash_history | logger -t "LnxCmd: Date: $(date "+%Y-%m-%d %H:%M:%S") User: [ $USER ] Shell PID: [$$] command")'
+    insertafter: EOF
+    backup: true
+  tags:
+    - exec_command_to_rsyslog
+
+- name: Add timestampe to history
+  ansible.builtin.lineinfile:
+    path: "{{ '/etc/bashrc' if ansible_distribution in ['CentOS', 'RedHat', 'OracleLinux' ,'Rocky'] else '/etc/bash.bashrc' }}"
+    regexp: "^export HISTTIMEFORMAT="
+    line: |
+      export HISTTIMEFORMAT="%F %T: "
+    insertafter: EOF
+    backup: true
+  tags:
+    - history_timestamp
+#- name: Remove unnecessary users

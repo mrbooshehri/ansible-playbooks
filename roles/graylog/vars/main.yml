@@ -1,0 +1,3 @@
+DOCKER_USERNAME: "admin"
+DOCKER_PASSWORD: "VASLPass@123456"
+GRAYLOG_HOME: "/mnt/graylog"

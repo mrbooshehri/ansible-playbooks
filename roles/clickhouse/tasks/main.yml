@@ -1,0 +1,145 @@
+---
+- name: configuration
+  tags:
+    - configuration
+  block:
+    - name: Delete file contents
+      community.general.filesize:
+        path: /etc/resolv.conf
+        size: 0
+      tags:
+        - set_nameserver
+
+    - name: Add nameserver lines
+      lineinfile:
+        path: /etc/resolv.conf
+        line: "nameserver {{ item }}"
+      loop:
+        - 178.22.122.100
+        - 185.51.200.2
+      tags:
+        - set_nameserver
+      
+    - name: Add elastic nodes to /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ item.ip }} {{ item.name }}"
+      loop: "{{ nodes }}"
+      tags:
+        - etc_hosts
+
+    - name: Add clickhose user
+      user:
+        name: "{{ user }}"
+        shell: /sbin/nologin
+
+- name: Ubuntu/Debian
+  when: ansible_distribution in ["Ubuntu", "debian"]
+  tags:
+    - install_clickhouse
+  block:
+    - name: Install multiple packages
+      apt:
+        pkg:
+          - apt-transport-https
+          - ca-certificates
+          - dirmngr
+        update_cache: yes
+    
+    - name: Add the APT Key for ClickHouse.
+      apt_key:
+        keyserver: "{{ key_server }}"
+        id: "{{ deb_rep_key }}"
+        state: present
+    
+    - name: Add ClickHouse APT sources
+      apt_repository:
+        repo: "{{ deb_rep }}"
+        state: present
+    
+    - name: Install ClickHouse
+      apt:
+        pkg:
+          - clickhouse-server
+          - clickhouse-client
+          - clickhouse-common-static
+      notify: Enable ClickHouse
+    
+    - name: Create non sensitive ClickHouse directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+        owner: "{{ user }}"
+        group: "{{ group }}"
+      loop:
+        - "{{ conf_dir }}"
+    
+    - name: Create sensitive ClickHouse directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0750"
+        owner: "{{ user }}"
+        group: "{{ group }}"
+      loop:
+        - "{{ path }}"
+        - "{{ user_files_path }}"
+        - "{{ access_control_path }}"
+        - "{{ tmp_path }}"
+        - "{{ log_directory }}"
+
+- name: CentOs/RHEL
+  when: ansible_distribution == 'RedHat' or ansible_distribution == 'CentOS'
+  tags:
+    - install_clickhouse
+  block:
+    - name: Install multiple packages
+      yum:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - dirmngr
+        state: present
+        update_cache: yes
+    
+    - name: Add the YUM repository for ClickHouse
+      yum_repository:
+        name: clickhouse
+        description: ClickHouse YUM Repository
+        baseurl: "{{ rpm_repo }}"
+        gpgcheck: false
+        enabled: yes
+    
+    - name: Install ClickHouse
+      yum:
+        name:
+          - clickhouse-server
+          - clickhouse-client
+          - clickhouse-common-static
+        state: present
+      notify: Enable ClickHouse
+    
+    - name: Create non sensitive ClickHouse directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+        owner: "{{ user }}"
+        group: "{{ group }}"
+      loop:
+        - "{{ conf_dir }}"
+    
+    - name: Create sensitive ClickHouse directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0750"
+        owner: "{{ user }}"
+        group: "{{ group }}"
+      loop:
+        - "{{ path }}"
+        - "{{ user_files_path }}"
+        - "{{ access_control_path }}"
+        - "{{ tmp_path }}"
+        - "{{ log_directory }}"

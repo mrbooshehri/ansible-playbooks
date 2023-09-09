@@ -1,0 +1,12 @@
+bind 0.0.0.0
+port 6379
+daemonize yes
+logfile /var/log/redis/redis.log
+save 900 1
+save 300 10
+save 60 10000
+rdbcompression yes
+dir /var/lib/redis
+slave-serve-stale-data yes
+slave-read-only yes
+

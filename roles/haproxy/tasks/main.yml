@@ -1,0 +1,11 @@
+---
+- name: "Add haproxy {{ haproxy_version }} ppa"
+  apt_repository:
+    repo: "ppa:vbernat/haproxy-{{ haproxy_version }}"
+    filename: "haproxy_{{ haproxy_version }}"
+
+- name: "Update the repository cache and install haproxy version {{ haproxy_version }}"
+  ansible.builtin.apt:
+    name: haproxy
+    state: latest
+    update_cache: yes

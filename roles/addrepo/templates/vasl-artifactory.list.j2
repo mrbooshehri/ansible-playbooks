@@ -1,0 +1,20 @@
+#################### Base repositories
+deb [trusted=yes] https://registry.vaslapp.com/artifactory/debian-archive-remote {{ ansible_distribution_release }} main restricted
+deb [trusted=yes] https://registry.vaslapp.com/artifactory/debian-archive-remote {{ ansible_distribution_release }}-updates main restricted
+deb [trusted=yes] https://registry.vaslapp.com/artifactory/debian-archive-remote {{ ansible_distribution_release }} universe
+deb [trusted=yes] https://registry.vaslapp.com/artifactory/debian-archive-remote {{ ansible_distribution_release }}-updates universe
+deb [trusted=yes] https://registry.vaslapp.com/artifactory/debian-archive-remote {{ ansible_distribution_release }} multiverse
+deb [trusted=yes] https://registry.vaslapp.com/artifactory/debian-archive-remote {{ ansible_distribution_release }}-updates multiverse
+deb [trusted=yes] https://registry.vaslapp.com/artifactory/debian-archive-remote {{ ansible_distribution_release }}-backports main restricted universe multiverse
+deb [trusted=yes] https://registry.vaslapp.com/artifactory/debian-archive-remote {{ ansible_distribution_release }}-security main restricted
+deb [trusted=yes] https://registry.vaslapp.com/artifactory/debian-archive-remote {{ ansible_distribution_release }}-security universe
+deb [trusted=yes] https://registry.vaslapp.com/artifactory/debian-archive-remote {{ ansible_distribution_release }}-security multiverse
+
+#################### Mongo repositories Version 5.0
+deb [trusted=yes arch=amd64] https://registry.vaslapp.com/artifactory/mongodb {{ ansible_distribution_release }}/mongodb-org/5.0 multiverse
+
+#################### Clickhose repositories
+deb [trusted=yes] https://registry.vaslapp.com/artifactory/clickhouse stable main
+
+#################### Add Zabbix repositories Version 6.0
+deb [trusted=yes] https://registry.vaslapp.com/artifactory/zabbix {{ ansible_distribution_release }} main

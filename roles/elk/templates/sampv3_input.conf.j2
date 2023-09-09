@@ -1,0 +1,41 @@
+input {
+  file {
+    path => [ "{{ samp.log_dir }}" ]
+  }
+}
+
+filter {
+  dissect {
+    mapping => {
+      "message" => "%{log_timestamp}|%{persian_date}|%{log_level}|%{app_name}|%{logger_marker}|%{host}|%{ip}|%{proxy_ip}|%{class_name}|%{thread_name}|%{request_id}|%{log_type}|%{api_type}|%{call_type}|%{client}|%{username}|%{user_id}|%{action}|%{action_type}|%{src}|%{target}|%{response_status}|%{response_time}|%{status}|%{code}|%{provider_response_time}|%{gw_status}|%{gw_code}|%{gateway_type}|%{api_id}|%{endpoint_id}|%{api_name}|%{endpoint_name}|%{pid}|%{package_id}|%{plan_id}|%{provider_id}|%{provider_name}|%{price}|%{payment_type}|%{flow_id}|%{flow_event}|%{http_method}|%{url}|%{user_agent}|%{action_detailes}|%{inputs}|%{outputs}|%{msg}"
+    }
+    convert_datatype => {
+      "response_time" => "float"
+      "status" => "float"
+      "code" => "float"
+    }
+      add_field => [ "received_at", "%{@timestamp}" ]
+      add_field => [ "received_from", "%{host}" ]
+  }
+  date {
+    match => [ "log_timestamp", "YYYY-MM-dd HH:mm:ss" ]
+    target => "@timestamp"
+  }
+  ruby {
+    code => "
+    event.set('persian_year', (event.get('persian_date')[0..3]))
+    event.set('persian_month', (event.get('persian_date')[5..6]))
+    event.set('persina_day', (event.get('persian_date')[8..9]))
+    "
+  }
+}
+
+output {
+  elasticsearch {
+    hosts =>  [ {% for node in nodes %}"{{ node.ip }}:9200"{% if not loop.last %},{% endif %}{% endfor %} ]
+    user => "{{ sampv3.elk_username }}"
+    password => "{{ sampv3.elk_passowrd }}"
+    index => "{{ sampv3.elk_index }}"
+  }
+}
+

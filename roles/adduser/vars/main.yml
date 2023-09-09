@@ -1,9 +1,19 @@
-user_info:
-  - {username: app, password: 123456}
-  - {username: devops, password: 123456}
-  - {username: dev, password: 123456}
-  - {username: data, password: 123456}
-  - {username: sup, password: 123456}
+#user_info:
+#  - {username: app, password: 123456}
+#  - {username: devops, password: 123456}
+#  - {username: dev, password: 123456}
+#  - {username: data, password: 123456}
+#  - {username: sup, password: 123456}
 
-root_password:
-  - 123456
+#root_password:
+#  - 123456
+
+none_root_users:
+  app: 123456
+  data: 123456
+  dev: 123456
+  devops: 123456
+  sup: 123456
+
+root_user:
+  root: 123456

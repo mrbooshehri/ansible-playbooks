@@ -1,0 +1,24 @@
+nodes:
+  - name: mongoc-01
+    ip: 192.168.171.49
+    type: config
+  - name: mongoc-02
+    ip: 192.168.171.50
+    type: config
+  - name: mongoc-03
+    ip: 192.168.171.51
+    type: config
+  - name: mongod-01
+    ip: 192.168.171.52
+    type: data
+  - name: mongod-02
+    ip: 192.168.171.53
+    type: data
+  - name: mongod-03
+    ip: 192.168.171.54
+    type: data
+
+mongo:
+  username: mongodb
+  data: "/mnt/mongodb-dat"
+

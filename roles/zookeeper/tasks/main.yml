@@ -1,0 +1,47 @@
+--- 
+- name: Ubuntu/Debian
+  when: ansible_distribution in ["Ubuntu", "debian"]
+  tags:
+    - install_zookeeper
+  block:
+    - name: Add user
+      user:
+        name: "{{ user }}"
+        shell: /sbin/nologin
+  
+    - name: Create data and conf directory
+      file:
+        path: "{{ data }}"
+        state: directory
+        owner: "{{ user }}"
+        group: "{{ group }}"
+      loop:
+        - "{{ data }}"
+        - "{{ conf }}"
+      
+    - name: Download ZooKeeper tar.gz
+      get_url:
+        url: "{{ url }}"
+        dest: /tmp/tar.gz
+
+    - name: Unarchive ZooKeeper tar.gz
+      unarchive:
+        src: /tmp/tar.gz
+        dest: /tmp/
+        remote_src: yes
+        creates: /tmp/
+
+    - name: Rename ZooKeeper directory
+      shell: "mv /tmp/apache-zookeeper* {{ home }}"
+
+    - name: Copy service
+      template:
+        src: zoo.cfg.j2
+        dest: "{{ conf }}/zoo.cfg"
+
+    - name: Copy service
+      template:
+        src: zookeeper.service.j2
+        dest: /lib/systemd/system/zookeeper.service
+      notify: Start zookeeper
+

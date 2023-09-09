@@ -1,0 +1,271 @@
+---
+- name: configuration
+  block:
+  tags:
+    - configuration
+    - name: Delete file contents
+      community.general.filesize:
+        path: /etc/resolv.conf
+        size: 0
+      tags:
+        - set_nameserver
+
+    - name: Add nameserver lines
+      lineinfile:
+        path: /etc/resolv.conf
+        line: "nameserver {{ item }}"
+      loop:
+        - 178.22.122.100
+        - 185.51.200.2
+      tags:
+        - set_nameserver
+        - elasticsearch
+        - logstash
+        - kibana
+        - filebeat
+      
+    - name: Add elastic nodes to /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ item.ip }} {{ item.name }}"
+      loop: "{{ nodes }}"
+      tags:
+        - etc_hosts
+
+- name: Ubuntu/Debian
+  when: ansible_distribution in ["Ubuntu", "debian"]
+  tags:
+    - install
+  block:
+    - name: Install OpenJDK 11 on Ubuntu/Debian
+      apt:
+        name: openjdk-11-jdk
+        state: present
+      tags:
+        - install_java
+        - elasticsearch
+        - logstash
+        - kibana
+        - filebeat
+
+    - name: Get elasticsearch deb files from repository
+      ansible.builtin.get_url:
+        url: "{{ gitlab.url }}/{{ deb.elasticsearch }}"
+        dest: "/tmp/{{ deb.elasticsearch }}"
+        username: "{{ gitlab.username }}"
+        password: "{{ gitlab.password }}"
+      tags:
+        - elasticsearch
+
+    - name: Get logstash deb files from repository
+      ansible.builtin.get_url:
+        url: "{{ gitlab.url }}/{{ deb.logstash }}"
+        dest: "/tmp/{{ deb.logstash }}"
+        username: "{{ gitlab.username }}"
+        password: "{{ gitlab.password }}"
+      tags:
+        - logstash
+
+    - name: Get kibana deb files from repository
+      ansible.builtin.get_url:
+        url: "{{ gitlab.url }}/{{ deb.kibana }}"
+        dest: "/tmp/{{ deb.kibana }}"
+        username: "{{ gitlab.username }}"
+        password: "{{ gitlab.password }}"
+      tags:
+        - kibana
+
+    - name: Get filebeat deb files from repository
+      ansible.builtin.get_url:
+        url: "{{ gitlab.url }}/{{ deb.filebeat }}"
+        dest: "/tmp/{{ deb.filebeat }}"
+        username: "{{ gitlab.username }}"
+        password: "{{ gitlab.password }}"
+      tags:
+        - filebeat
+
+    - name: Install deb packages
+      apt:
+        deb: "/tmp/{{ item.value }}"
+      loop: "{{ deb | dict2items }}"
+      loop_control:
+        label: "{{ item.value }}"
+      ignore_errors: true
+      tags:
+        - elasticsearch
+        - logstash
+        - kibana
+        - filebeat
+
+    - name: Create elasticsearch data folder
+      file:
+        state: directory
+        path: "{{ elasticsearch.data_dir }}"
+        owner: "{{ elasticsearch.username }}"
+        group: "{{ elasticsearch.username }}"
+      tags:
+        - elasticsearch
+
+    - name: Enable/Start elasticsearch service
+      ansible.builtin.systemd:
+        name: elasticsearch
+        state: started
+        enabled: true
+      tags:
+        - elasticsearch
+
+    - name: Enable/Start logstash service
+      ansible.builtin.systemd:
+        name: logstash
+        state: started
+        enabled: true
+      tags:
+        - logstash
+
+    - name: Enable/Start kibana service
+      ansible.builtin.systemd:
+        name: kibana
+        state: started
+        enabled: true
+      tags:
+        - kibana
+
+    - name: Enable/Start filebeat service
+      ansible.builtin.systemd:
+        name: filebeat
+        state: started
+        enabled: true
+      tags:
+        - filebeat
+
+    - name: Copy elasticsearch config
+      template:
+        src: elasticsearch.yml.j2
+        dest: /etc/elasticsearch/elasticsearch.yml
+      tags:
+        - elasticsearch
+        - elasticsearch_config
+
+    - name: Copy logstash input config
+      template:
+        src: sampv3_input.conf.j2
+        dest: /etc/logstash/conf.d/input.conf
+      tags:
+        - sampv3
+
+  rescue:
+    - name: List of availabe packages
+      shell: |
+        curl -s -uadmin:APF5N86DVuqb3y8miY4V3xu6MA  "https://registry.vaslapp.com/artifactory/elk-local/" | egrep -w "*<a" | awk -F "<a" '{print $2}' |cut -d ">" -f2- | cut -d "<" -f1
+
+- name: CentOs/RHEL
+  when: ansible_distribution == 'RedHat' or ansible_distribution == 'CentOS'
+  tags:
+    - install
+  block:
+    - name: Install OpenJDK 11 on Red Hat/CentOS
+      yum:
+        name: java-11-openjdk-devel
+        state: present
+      tags:
+        - install_java
+        - elasticsearch
+        - logstash
+        - kibana
+        - filebeat
+
+    - name: Get elasticsearch rpm files from repository
+      ansible.builtin.get_url:
+        url: "{{ gitlab.url }}/{{ rpm.elasticsearch }}"
+        dest: "/tmp/{{ rpm.elasticsearch }}"
+        username: "{{ gitlab.username }}"
+        password: "{{ gitlab.password }}"
+      tags:
+        - elasticsearch
+
+    - name: Get logstash rpm files from repository
+      ansible.builtin.get_url:
+        url: "{{ gitlab.url }}/{{ rpm.logstash }}"
+        dest: "/tmp/{{ rpm.logstash }}"
+        username: "{{ gitlab.username }}"
+        password: "{{ gitlab.password }}"
+      tags:
+        - logstash
+
+    - name: Get kibana rpm files from repository
+      ansible.builtin.get_url:
+        url: "{{ gitlab.url }}/{{ rpm.kibana }}"
+        dest: "/tmp/{{ rpm.kibana }}"
+        username: "{{ gitlab.username }}"
+        password: "{{ gitlab.password }}"
+      tags:
+        - kibana
+
+    - name: Get filebeat rpm files from repository
+      ansible.builtin.get_url:
+        url: "{{ gitlab.url }}/{{ rpm.filebeat }}"
+        dest: "/tmp/{{ rpm.filebeat }}"
+        username: "{{ gitlab.username }}"
+        password: "{{ gitlab.password }}"
+      tags:
+        - filebeat
+
+    - name: Create elasticsearch data folder
+      file:
+        state: directory
+        path: "{{ elasticsearch_data_dir }}"
+        owner: "{{ elasticsearch_username }}"
+        group: "{{ elasticsearch_username }}"
+      tags:
+        - elasticsearch
+
+    - name: Enable/Start elasticsearch service
+      ansible.builtin.systemd:
+        name: elasticsearch
+        state: started
+        enabled: true
+      tags:
+        - elasticsearch
+
+    - name: Enable/Start logstash service
+      ansible.builtin.systemd:
+        name: logstash
+        state: started
+        enabled: true
+      tags:
+        - logstash
+
+    - name: Enable/Start kibana service
+      ansible.builtin.systemd:
+        name: kibana
+        state: started
+        enabled: true
+      tags:
+        - kibana
+
+    - name: Enable/Start filebeat service
+      ansible.builtin.systemd:
+        name: filebeat
+        state: started
+        enabled: true
+      tags:
+        - filebeat
+
+    - name: Install deb packages
+      yum:
+        name: "/tmp/{{ item.value }}"
+        state: present
+      loop: "{{ rpm | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"
+      ignore_errors: true
+      tags:
+        - elasticsearch
+        - logstash
+        - kibana
+        - filebeat
+  rescue:
+    - name: List of availabe packages
+      shell: |
+        curl -s -uadmin:APF5N86DVuqb3y8miY4V3xu6MA  "https://registry.vaslapp.com/artifactory/elk-local/" | egrep -w "*<a" | awk -F "<a" '{print $2}' |cut -d ">" -f2- | cut -d "<" -f1
+

@@ -1,0 +1,37 @@
+[artifactory-base]
+name=Artifactory-$releasever - Base
+baseurl=https://admin:APF5N86DVuqb3y8miY4V3xu6MA@registry.vaslapp.com/artifactory/rpm/$releasever/os/$basearch/
+gpgcheck=0
+
+#released updates 
+[artifactory-updates]
+name=Artifactory-$releasever - Updates
+baseurl=https://admin:APF5N86DVuqb3y8miY4V3xu6MA@registry.vaslapp.com/artifactory/rpm/$releasever/updates/$basearch/
+gpgcheck=0
+
+#additional packages that may be useful
+[artifactory-extras]
+name=Artifactory-$releasever - Extras
+baseurl=https://admin:APF5N86DVuqb3y8miY4V3xu6MA@registry.vaslapp.com/artifactory/rpm/$releasever/extras/$basearch/
+gpgcheck=0
+
+#additional packages that extend functionality of existing packages
+[artifactory-centosplus]
+name=Artifactory-$releasever - Plus
+baseurl=https://admin:APF5N86DVuqb3y8miY4V3xu6MA@registry.vaslapp.com/artifactory/rpm/$releasever/centosplus/$basearch/
+gpgcheck=0
+enabled=0
+
+#additional packages that extend functionality of existing packages
+[artifactory-cr]
+name=Artifactory-$releasever - cr
+baseurl=https://admin:APF5N86DVuqb3y8miY4V3xu6MA@registry.vaslapp.com/artifactory/rpm/$releasever/cr/$basearch/
+gpgcheck=0
+enabled=0
+
+#epel packages
+[artifactory-epel]
+name=Artifactory-$releasever - epel
+baseurl=https://admin:APF5N86DVuqb3y8miY4V3xu6MA@registry.vaslapp.com/artifactory/rpm/epel/$releasever/$basearch/
+gpgcheck=0
+enabled=0

@@ -1,0 +1,36 @@
+gitlab:
+  url: "https://registry.vaslapp.com/artifactory/elk-local"
+  username: "admin"
+  password: "APF5N86DVuqb3y8miY4V3xu6MA"
+
+deb:
+  elasticsearch: "elasticsearch_7.17.8_amd64.deb"
+  kibana: "kibana_7.17.8_amd64.deb"
+  logstash: "logstash7.17.8_amd64.deb"
+  filebeat: "filebeat_7.17.8_amd64.deb"
+
+rpm:
+  elasticsearch: "elasticsearch-7.17.8-x86_64.rpm"
+  kibana: "kibana-7.17.8-x86_64.rpm"
+  logstash: "logstash-7.17.8-x86_64.rpm"
+  filebeat: "filebeat-7.17.8-x86_64.rpm"
+
+elasticsearch:
+  username: "elasticsearch"
+  data_dir: "/mnt/elasticsearch"
+  log_dir: "/var/log/elasticsearch"
+  cluster_name: "es-cluster"
+
+sampv3:
+  elk_username: "elastic"
+  elk_password: "elastic"
+  elk_index: "logbi-mymoi-k-%{+YYYY.MM.dd}"
+  log_dir: "/mnt/sampv3/gateway/gateway.log"
+
+nodes:
+  - name: "elk01"
+    ip: 192.168.171.65
+  - name: "elk02"
+    ip: 192.168.171.66
+  - name: "elk03"
+    ip: 192.168.171.67

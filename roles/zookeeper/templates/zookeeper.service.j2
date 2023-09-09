@@ -1,0 +1,18 @@
+[Unit]
+Description=Apache ZooKeeper
+Documentation=https://apache.org/
+After=network.target
+
+[Service]
+Type=simple
+User={{ user }}
+Group={{ group }}
+ExecStart={{ home }}/bin/zkServer.sh start-foreground
+ExecStop={{ home }}/bin/zkServer.sh stop
+ExecReload={{ home }}/bin/zkServer.sh restart
+WorkingDirectory={{ home }}
+TimeoutSec=30
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

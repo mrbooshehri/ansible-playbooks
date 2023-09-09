@@ -1,0 +1,146 @@
+---
+############################################################ Deb
+- name: Ubuntu/Debian
+  when: ansible_distribution in ["Ubuntu", "debian"]
+  ignore_errors: true
+  block:
+
+    - name: "DEB: Archive /etc/apt/sources.list.d"
+      archive:
+        path: /etc/apt/sources.list.d
+        dest: /etc/apt/sources.list.d.tar.gz
+
+    - name: "DEB: Removing sources.list.d"
+      command: rm -rf /etc/apt/sources.list.d/*
+
+    - name: "DEB: Backup original repo file sources.list.d"
+      copy:
+        src: /etc/apt/sources.list
+        dest: /etc/apt/sources.list.back
+        backup: yes
+        remote_src: yes
+
+    - name: "DEB: Remove original repo file sources.list"
+      file:
+        path: /etc/apt/sources.list
+        state: absent
+
+    - name: "DEB: Add vasl-auth to /etc/apt/auth.conf.d"
+      template:
+        src: vasl-auth.conf.j2
+        dest: /etc/apt/auth.conf.d/vasl-auth.conf
+      tags:
+        - add_auth_info
+
+    - name: "DEB: Add custom repository"
+      template:
+        src: vasl-artifactory.list.j2
+        dest: /etc/apt/sources.list.d/vasl-artifactory.list
+
+    - name: "DEB: Install necessary packages"
+      apt:
+        name: "{{ item }}"
+        update_cache: true
+        state: present
+      loop:
+        - net-tools
+        - vim
+        - tmux
+        - telnet
+        - tcpdump
+        - wget
+        - jq
+        - curl
+        - open-vm-tools
+        - iftop
+        - traceroute
+        - htop 
+        - nmap
+        - nethogs
+        - netcat
+  
+############################################################ Rpm
+
+- name: CentOs/RHEL
+  when: ansible_distribution == 'Rocky' or ansible_distribution == 'CentOS'
+  ignore_errors: true
+  block:
+
+    - name: "RPM: Archive /etc/yum.repos.d"
+      archive:
+        path: /etc/yum.repos.d
+        dest: /etc/yum.repos.d.tar.gz
+
+    - name: "RPM: Removing yum.repos.d"
+      command: rm -rf /etc/yum.repos.d/*
+
+    - name: "RPM: Add CentOS 7 repository"
+      template:
+        src: centos7-artifactory.repo.j2
+        dest: /etc/yum.repos.d/centos7-artifactory.repo
+      when:
+        - ( ansible_distribution == 'CentOS' ) and ( ansible_distribution_major_version == '7' or ansible_distribution_major_version == '8' )
+
+    - name: "RPM: Add Rocky repository"
+      template:
+        src: rocky-8-artifactory.repo.j2
+        dest: /etc/yum.repos.d/rocky-8-artifactory.repo
+      when:
+        - ( ansible_distribution == 'Rocky' ) and ( ansible_distribution_major_version == '8' or ansible_distribution_major_version == '9' )
+
+    - name: "RPM: Update yum cache"
+      yum:
+        name: "{{ item }}"
+        update_cache: true
+        state: present
+      loop:
+        - net-tools
+        - vim
+        - tmux
+        - telnet
+        - tcpdump
+        - wget
+        - jq
+        - curl
+        - open-vm-tools
+        - iftop
+        - traceroute
+        - htop 
+        - nmap
+        - nethogs
+        - netcat
+
+############################################################ docker
+#- name: dokcer
+#  block:
+#    - name: Block docker.io
+#      lineinfile:
+#        path: "/etc/hosts"
+#        regexp: "^127.0.0.1 registry-1.docker.io"
+#        line: |
+#          127.0.0.1 registry-1.docker.io
+#        insertafter: EOF
+#        backup: true
+#      tags:
+#        - history_timestamp
+#
+#    - name: Change dokcer regisry
+#      template:
+#        src: daemon.json.j2
+#        dest: /etc/docker/daemon.json
+#      tags:
+#        - copy_docker_conf
+#
+#    - name: Log into private registry and force re-authorization
+#      docker_login:
+#        registry: https://registry.vaslapp.com
+#        username: "{{ DOCKER_USERNAME }}"
+#        password: "{{ DOCKER_PASSWORD }}"
+#        reauthorize: yes
+#
+#    - name: Stop docker docker.service
+#      systmed:
+#        name: docker
+#        state: restarted
+#      tags:
+#        - restart_docker

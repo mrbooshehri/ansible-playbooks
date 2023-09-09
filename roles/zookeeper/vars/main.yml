@@ -1,0 +1,13 @@
+---
+user: "zookeeper"
+group: "{{ zookeeper.user }}"
+data: "/mnt/zookeeper_data"
+home: "/opt/zookeeper"
+conf: "/etc/zookeeper/conf"
+version: "3.8.2"
+url: "https://apache.osuosl.org/zookeeper/zookeeper-{{ zookeeper.version }}/apache-zookeeper-{{ zookeeper.version }}.tar.gz"
+
+nodes:
+  - 192.168.171.65
+  - 192.168.171.66
+  - 192.168.171.67
