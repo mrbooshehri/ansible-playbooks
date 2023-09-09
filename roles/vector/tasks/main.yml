@@ -1,0 +1,25 @@
+---
+- name: Ubuntu
+  when: ansible_os_family in ['Ubuntu', 'Debian']
+  block:
+    - name: Add Vector APT Repository
+      apt_repository:
+        repo: "deb https://packages.timber.io/vector/deb stable main"
+        state: present
+      tags:
+        - add_repo
+    
+    - name: Install Vector
+      apt:
+        name: vector
+        state: latest
+      tags:
+        - install
+    
+    - name: Start Vector Service
+      systemd:
+        name: vector
+        enabled: yes
+        state: started
+      tags:
+        - start_service
