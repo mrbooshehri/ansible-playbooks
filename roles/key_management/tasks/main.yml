@@ -1,0 +1,42 @@
+---
+# tasks file for roles/key_management
+---
+- name: Create ~/.ssh dir
+  file:
+    path: /home/devops/.ssh
+    state: directory
+  tags:
+    - key_home
+
+- name: Remove /.ssh/known_host
+  command: truncate -s 0 /{{ item }}/.ssh/known_hosts
+  ignore_errors: true
+  loop:
+    - home/devops
+    - root
+  tags:
+    - remove_known_hosts
+  when: "'remove_known_hosts' in ansible_run_tags"
+
+- name: Add ansible "devops.pub"
+  lineinfile:
+    state: present
+    create: true
+    path: /home/devops/.ssh/authorized_keys
+    line: "{{ devops_public_key }}"
+    owner: devops
+    group: devops
+    mode: "0600"
+    backup: true
+  tags:
+    - add_pub_key
+
+- name: Remove public keys
+  authorized_key:
+    user: "{{ item }}"
+    state: absent
+  with_fileglob:
+    - "/home/*/.ssh/authorized_keys"
+    - "/root/.ssh/authorized_keys"
+  tags:
+    - remove_public_keys

@@ -1,0 +1,122 @@
+---
+######################################### ls 
+- name: ls -la directory
+  shell: ls -ld /home/*
+  register: ls_data_file_output
+ 
+- name: find data directory
+  debug:
+    var: ls_data_file_output.stdout
+
+######################################### Check users on host 
+- name: "Report: users in passwd"
+  block: 
+
+    - name: Cat and Grep Password File
+      shell: cat /etc/passwd | grep -wE "/bin/bash|/bin/sh" | grep -vE "^devops|^datau|^supu|^supmu|^servu|^gitu|^mgnu|^datareport|^root"
+      register: passwd_file_output
+      ignore_errors: true
+      failed_when: passwd_file_output.rc in [ 1000, 11000 ]
+
+    - name: Print password file output
+      debug:
+        msg: "{{ passwd_file_output.stdout }}"
+
+  tags:
+    - passwd_users_report
+
+######################################### check crontab for users
+- name: "Report: crontab all users"
+  block:
+    
+    - name: check user crontab root
+      shell: crontab -l -u root
+      register: root_crontab_output
+      ignore_errors: true
+    
+    - name: check user crontab devops
+      shell: crontab -l -u devops
+      register: devops_crontab_output
+      ignore_errors: true
+
+#    - name: check user crontab datau
+#      shell: crontab -l -u datau
+#      register: datau_crontab_output
+#      ignore_errors: true
+#
+#    - name: check user crontab mgnu
+#      shell: crontab -l -u mgnu
+#      register: mgnu_crontab_output
+#      ignore_errors: true
+#
+#    - name: check user crontab supu
+#      shell: crontab -l -u supu
+#      register: supu_crontab_output
+#      ignore_errors: true
+#
+#    - name: check user crontab supmu
+#      shell: crontab -l -u supmu
+#      register: supmu_crontab_output
+#      ignore_errors: true
+#
+#    - name: check user crontab datareportu
+#      shell: crontab -l -u datareportu
+#      register: datareportu_crontab_output
+#      ignore_errors: true
+#
+#    - name: check user crontab servu
+#      shell: crontab -l -u servu
+#      register: servu_crontab_output
+#      ignore_errors: true
+
+
+
+    - name: Print crontab output root_crontab_output
+      debug:
+        msg: "{{ root_crontab_output.stdout_lines }}"
+
+    - name: Print crontab output devops_crontab_output
+      debug:
+        msg: "{{ devops_crontab_output.stdout_lines }}"
+
+#    - name: Print crontab output datau_crontab_output
+#      debug:
+#        msg: "{{ datau_crontab_output.stdout_lines }}"
+#
+#    - name: Print crontab output mgnu_crontab_output
+#      debug:
+#        msg: "{{ mgnu_crontab_output.stdout_lines }}"
+#
+#    - name: Print crontab output supu_crontab_output
+#      debug:
+#        msg: "{{ supu_crontab_output.stdout_lines }}"
+#
+#    - name: Print crontab output supmu_crontab_output
+#      debug:
+#        msg: "{{ supmu_crontab_output.stdout_lines }}"
+#
+#    - name: Print crontab output datareportu_crontab_output
+#      debug:
+#        msg: "{{ datareportu_crontab_output.stdout_lines }}"
+#
+#    - name: Print crontab output servu_crontab_output
+#      debug:
+#        msg: "{{ servu_crontab_output.stdout_lines }}"
+
+  tags:
+    - crontab_users_report
+
+######################################### check servers time
+- name: check_time
+  block: 
+
+    - name: date command for check time 
+      shell: date
+      register: time_server_output
+    
+    - name: print date
+      debug:
+        msg: "{{ time_server_output.stdout }}"
+
+  tags:
+    - check_time_servers

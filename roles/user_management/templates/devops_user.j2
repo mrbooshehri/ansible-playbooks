@@ -1,0 +1,39 @@
+##########################################################
+#                         GENERAL  VARS                  #
+##########################################################
+
+################ set sudoers file change command variable
+Cmnd_Alias      SU_CMD = /bin/su, /sbin/visudo, /sbin/sudoedit, /sbin/runuser
+
+Cmnd_Alias      NSHELLS = /bin/sh, /bin/bash, /sbin/nologin, /bin/tcsh, /bin/csh, /bin/zsh, /bin/ksh
+
+################ set path vars
+Cmnd_Alias      PATH_ULS = /usr/local/sbin/* /etc/sudoers.d/*, /usr/local/sbin/* * /etc/sudoers.d/*, \
+/usr/local/sbin/* /etc/sudo*, /usr/local/sbin/* * /etc/sudo*
+
+Cmnd_Alias      PATH_ULB = /usr/local/bin/* /etc/sudoers.d/*, /usr/local/bin/* * /etc/sudoers.d/*, \
+/usr/local/bin/* /etc/sudo*, /usr/local/bin/* * /etc/sudo*
+
+Cmnd_Alias      PATH_US = /usr/sbin/* /etc/sudoers.d/*, /usr/sbin/* * /etc/sudoers.d/*, \
+/usr/sbin/* /etc/sudo*, /usr/sbin/* * /etc/sudo*
+
+Cmnd_Alias      PATH_UB = /usr/bin/* /etc/sudoers.d/*, /usr/bin/* * /etc/sudoers.d/*, \
+/usr/bin/* /etc/sudo*,/usr/bin/* * /etc/sudo*
+
+Cmnd_Alias      PATH_S = /sbin/* /etc/sudoers.d/*, /sbin/* * /etc/sudoers.d/* \
+/sbin/* /etc/sudo*, /sbin/* * /etc/sudo*
+
+Cmnd_Alias      PATH_B = /bin/* /etc/sudoers.d/*, /bin/* * /etc/sudoers.d/*, \
+/bin/* /etc/sudo*, /bin/* * /etc/sudo*
+
+Cmnd_Alias      PATH_UG = /usr/games/* /etc/sudoers.d/*, /usr/games/* * /etc/sudoers.d/*, \
+/usr/games/* /etc/sudo*, /usr/games/* * /etc/sudo*
+
+Cmnd_Alias      PATH_ULG = /usr/local/games/* /etc/sudoers.d/*, /usr/local/games/* * /etc/sudoers.d/*, \
+/usr/local/games/* /etc/sudo*, /usr/local/games/* * /etc/sudo*
+
+Cmnd_Alias      PATH_SB = /snap/bin/* /etc/sudoers.d/*, /snap/bin/* * /etc/sudoers.d/*, \
+/snap/bin/* /etc/sudo*, /snap/bin/* * /etc/sudo*
+
+############################## devops ############################## control users accesss
+devops ALL=(ALL) NOPASSWD:ALL

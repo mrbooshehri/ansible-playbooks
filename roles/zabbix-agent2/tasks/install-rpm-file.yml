@@ -1,0 +1,48 @@
+---
+# INSTALL RPM FILE
+
+- name: Install package Centos 7
+  shell: rpm -U '{{ item }}'
+  with_items:
+    - "{{ rpm_dir }}pcre2-10.23-2.el7.rpm"
+    - "{{ rpm_dir }}zabbix-agent2-6.2.4.el7.rpm"
+  when:
+    - (ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] == "7" )
+  tags:
+  - install
+
+- name: Install package Centos 8
+  shell: rpm -U '{{ item }}'
+  with_items:
+    - "{{ rpm_dir }}zabbix-agent2-6.2.4.el8.rpm"
+  when:
+   - (ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] == "8" )
+  tags:
+  - install
+
+- name: Install package Rocky 9
+  shell: rpm -U '{{ item }}'
+  with_items:
+    - "{{ rpm_dir }}zabbix-agent2-6.2.4.el9.rpm"
+  when:
+    - (ansible_facts['distribution'] == "Rocky" and ansible_facts['distribution_major_version'] == "9" )
+  tags:
+  - install
+
+- name: Install package OracleLinuxi 9
+  shell: rpm -U '{{ item }}'
+  with_items:
+    - "{{ rpm_dir }}zabbix-agent2-6.2.4.el9.rpm"
+  when:
+    - (ansible_facts['distribution'] == "OracleLinux" and ansible_facts['distribution_major_version'] == "9" )
+  tags:
+  - install
+
+- name: Install package Ubuntu
+  shell: dpkg -i '{{ item }}'
+  with_items:
+    - "{{ rpm_dir }}zabbix-agent2-6.2.0-ubuntu20.04.deb"
+  when:
+    - (ansible_facts['distribution'] == "Ubuntu" and ansible_facts['distribution_major_version'] == "20" )
+  tags:
+  - install

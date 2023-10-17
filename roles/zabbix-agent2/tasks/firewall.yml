@@ -1,0 +1,65 @@
+- name: Get ufw systemd Status
+  systemd:
+     name: ufw
+  register: ufw_systemd
+  tags:
+   - firewall
+   - firewall_ufw
+
+- debug:
+     var: ufw_systemd.status.ActiveState
+  tags:
+   - firewall
+   - firewall_ufw
+
+- name: check cli ufw status
+  shell: ufw status
+  register: ufw_check
+  tags:
+   - firewall
+   - firewall_ufw
+
+- debug:
+     var: ufw_check.stdout
+  tags:
+   - firewall
+   - firewall_ufw
+
+- name: add agent tcp port if ufw cli and systemd is active
+  ufw:
+    rule: allow
+    port: 10050
+    proto: tcp
+  when:
+    - "'inactive' not in ufw_check.stdout" 
+    - "ufw_systemd.status.ActiveState == 'active'"
+  tags:
+   - firewall
+   - firewall_ufw
+
+#- name: Get firewalld systemd Status
+#  systemd:
+#     name: firewalld
+#  register: firewalld_systemd
+#  tags:
+#   - firewall
+#   - firewall_firewalld
+#
+#- debug:
+#     var: firewalld_systemd.status.ActiveState
+#  tags:
+#   - firewall
+#   - firewall_firewalld
+#
+#- name: FirewallD rules
+#  firewalld:
+#    permanent: yes
+#    immediate: yes
+#    port: "{{item.port}}/{{item.proto}}"
+#    state: "{{item.state}}"
+#  with_items:
+#   - {port: "10050", proto: "tcp", state: "enabled"}
+#  when:
+#   -  
+#
+

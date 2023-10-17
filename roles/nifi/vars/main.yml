@@ -1,0 +1,3 @@
+NIFI_ARCHIVE: nifi-1.22.0-bin.zip
+NIFI_HOME: /opt/nifi
+NIFI_USER: nifi

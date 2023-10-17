@@ -224,6 +224,30 @@
         dest: /etc/mongod.conf
         mode: 644
       notify: Start Mongodb
-
         config_db_string: "replconfig01/{% for node in nodes | selectattr('type', 'equalto', 'config') %}{{ node.name }}{% if not loop.last %},{% endif %}{% endfor %}"
 
+    - name: Configure MongoDB Replica Set
+      community.mongodb.mongodb_replicaset:
+        members:
+          - "{{item.name}}:27017"
+        set_name: replconfig01
+      when: item.type == 'config'
+      loop:
+        - {{ nodes }}
+      register: rs_result
+
+    - name: Print MongoDB Replica Set Result
+      debug:
+        var: rs_result
+
+    - name: Get MongoDB Replica Set Status
+      community.mongodb.mongodb_replicaset:
+        action: get_status
+        login_user: admin_user
+        login_password: admin_password
+        set_name: replconfig01  # Replace with your replica set name
+      register: rs_status
+
+    - name: Print MongoDB Replica Set Status
+      debug:
+        var: rs_status

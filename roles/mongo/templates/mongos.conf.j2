@@ -9,4 +9,5 @@ net:
  port: 27017
  bindIp:  {{ ansible_default_ipv4.address }}
 sharding:
- configDB: replconfig01/{% for node in nodes | selectattr('type', 'equalto', 'config') %}{{ node.name }}:27017{% if not loop.last %},{% endif %}{% endfor %}
+ configDB: replconfig01/{% for node in nodes | selectattr('type', 'equalto', 'config') %}{{ node.name }}{% if not loop.last %},{% endif %}{% endfor %}
+        

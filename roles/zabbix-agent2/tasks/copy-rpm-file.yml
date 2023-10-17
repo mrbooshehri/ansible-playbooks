@@ -1,0 +1,58 @@
+---
+# COPY RPM FILE 
+- name: copy zabbix-agent2 rpm with dependency for centos7
+  copy:
+    src: "{{ item }}"
+    dest: "{{ rpm_dir }}"
+  with_items:
+     - pcre2-10.23-2.el7.rpm
+     - zabbix-agent2-6.2.4.el7.rpm
+  when:
+    - (ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] == "7" )
+  tags:
+  - install
+
+- name: copy zabbix-agent2 rpm with dependency for centos8
+  copy:
+    src: "{{ item }}"
+    dest: "{{ rpm_dir }}"
+  with_items:
+     - zabbix-agent2-6.2.4.el8.rpm
+  when:
+    - (ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] == "8" )
+  tags:
+  - install
+
+- name: copy zabbix-agent2 rpm with dependency for Rocky9
+  copy:
+    src: "{{ item }}"
+    dest: "{{ rpm_dir }}"
+  with_items:
+     - zabbix-agent2-6.2.4.el9.rpm
+  when:
+    - (ansible_facts['distribution'] == "Rocky" and ansible_facts['distribution_major_version'] == "9" )
+  tags:
+  - install
+
+- name: copy zabbix-agent2 rpm with dependency for OracleLinux9
+  copy:
+    src: "{{ item }}"
+    dest: "{{ rpm_dir }}"
+  with_items:
+     - zabbix-agent2-6.2.4.el9.rpm
+  when:
+    - (ansible_facts['distribution'] == "OracleLinux" and ansible_facts['distribution_major_version'] == "9" )
+  tags:
+  - install
+
+- name: copy zabbix-agent2 rpm with dependency for Ubuntu 20
+  copy:
+    src: "{{ item }}"
+    dest: "{{ rpm_dir }}"
+  with_items:
+     - zabbix-agent2-6.2.0-ubuntu20.04.deb
+  when:
+    - (ansible_facts['distribution'] == "Ubuntu" and ansible_facts['distribution_major_version'] == "20" )
+  tags:
+  - install
+

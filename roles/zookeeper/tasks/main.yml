@@ -19,20 +19,20 @@
         - "{{ data }}"
         - "{{ conf }}"
       
-    - name: Download ZooKeeper tar.gz
-      get_url:
-        url: "{{ url }}"
-        dest: /tmp/tar.gz
+    # - name: Download ZooKeeper tar.gz
+    #   get_url:
+    #     url: "{{ url }}"
+    #     dest: /tmp/tar.gz
 
-    - name: Unarchive ZooKeeper tar.gz
-      unarchive:
-        src: /tmp/tar.gz
-        dest: /tmp/
-        remote_src: yes
-        creates: /tmp/
+    # - name: Unarchive ZooKeeper tar.gz
+    #   unarchive:
+    #     src: /tmp/tar.gz
+    #     dest: /tmp
+    #     remote_src: yes
+    #     creates: /tmp
 
-    - name: Rename ZooKeeper directory
-      shell: "mv /tmp/apache-zookeeper* {{ home }}"
+    # - name: Rename ZooKeeper directory
+    #   shell: "mv /tmp/apache-zookeeper* {{ home }}"
 
     - name: Copy service
       template:

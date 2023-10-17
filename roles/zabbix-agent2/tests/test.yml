@@ -1,0 +1,21 @@
+---
+- hosts: pgsb
+  gather_facts: no
+#  become: yes
+  #  remote_user: root
+  roles:
+    - /home/hani/ansible/roles/zabbix-agent2
+#  tags:
+#   - always
+#   - check_os
+#   - install
+#   - config
+#   - config_agent
+#   - config_script
+#   - config_script_app
+#   - config_script_kub
+#   - config_script_elk
+#   - config_script_mongo
+#   - config_script_kafka
+#   - config_script_ha
+#   - config_script_redis

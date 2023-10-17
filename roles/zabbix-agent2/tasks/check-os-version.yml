@@ -1,0 +1,27 @@
+---
+# CHECK OS AND VERSION
+
+- name: " version suport: CentOS 7 or 8 / Rocky 9 / OracleLinux 9 "
+  fail:
+    msg: The distribution is not suuport. {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_major_version'] }}
+  when:
+    - (ansible_facts['distribution'] != "CentOS" or ansible_facts['distribution_major_version'] != "7" )
+    - (ansible_facts['distribution'] != "CentOS" or ansible_facts['distribution_major_version'] != "8" )
+    - (ansible_facts['distribution'] != "Rocky" or ansible_facts['distribution_major_version'] != "9" )
+    - (ansible_facts['distribution'] != "OracleLinux" or ansible_facts['distribution_major_version'] != "9" )
+    - (ansible_facts['distribution'] != "Ubuntu" or ansible_facts['distribution_major_version'] != "20" )
+  tags:
+  - always
+  - check_os
+
+- name: stop play
+  meta: end_host
+  when:
+    - (ansible_facts['distribution'] != "CentOS" or ansible_facts['distribution_major_version'] != "7" )
+    - (ansible_facts['distribution'] != "CentOS" or ansible_facts['distribution_major_version'] != "8" )
+    - (ansible_facts['distribution'] != "Rocky" or ansible_facts['distribution_major_version'] != "9" )
+    - (ansible_facts['distribution'] != "OracleLinux" or ansible_facts['distribution_major_version'] != "9" )
+    - (ansible_facts['distribution'] != "Ubuntu" or ansible_facts['distribution_major_version'] != "20" )
+  tags:
+  - always
+  - check_os

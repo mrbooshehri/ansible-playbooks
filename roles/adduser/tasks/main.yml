@@ -1,35 +1,87 @@
 ---
-- name: add users in a Ubuntu/Deiban host
-  user:
-    name: {{item.username}}
-    password: {{item.password}}
-    groups: sudo
-    status: present
-    append: yes
-    generate_ssh_key: yes
-    ssh_key_bits: 2048
-    ssh_key_file: ~/.ssh/id_rsa
-  loop: {{user_info}}
-  when: ansible_distribution == "Ubuntu"
-  tags: [adduser_ubuntu]
-
-- name: add users in a CentOS/RHEL host
-  user:
-    name: {{item.username}}
-    password: {{item.password}}
+- name: Add user in CentOS/RHEL hosts
+  ansible.builtin.user:
+    name: "{{ item.key }}"
+    password: "{{ item.value | string | password_hash('sha512') }}"
+    update_password: always
+    state: present
     groups: wheel
-    status: present
     append: yes
-    generate_ssh_key: yes
-    ssh_key_bits: 2048
-    ssh_key_file: ~/.ssh/id_rsa
-  loop: {{user_info}}
-  when: ansible_distribution == "CentOS"
-  tags: [adduser_centos]
+    shell: /bin/bash
+  loop: "{{ none_root_users | dict2items }}"
+  when: ansible_distribution in ['CentOS', 'Red Hat Enterprise Linux', 'OracleLinux']
+  tags:
+    - add_user
 
-- name: change root password
-  user:
+- name: Add user in Debian/Ubuntu hosts
+  ansible.builtin.user:
+    name: "{{ item.key }}"
+    password: "{{ item.value | string | password_hash('sha512') }}"
+    update_password: always
+    state: present
+    groups: sudo
+    append: yes
+    shell: /bin/bash
+  loop: "{{ none_root_users | dict2items }}"
+  when: ansible_distribution in ['Debian', 'Ubuntu']
+  tags:
+    - add_user
+
+- name: Add disaster user
+  ansible.builtin.user:
+    name: "disaster"
+    password: "{{ disaster_password | string | password_hash('sha512') }}"
+    update_password: always
+    state: present
+    groups: wheel
+    append: yes
+    shell: /bin/bash
+  when: ansible_distribution in ['CentOS', 'Red Hat Enterprise Linux', 'OracleLinux']
+  tags:
+    - add_disaster
+
+- name: Add disaster user
+  ansible.builtin.user:
+    name: "disaster"
+    password: "{{ disaster_password | string | password_hash('sha512') }}"
+    update_password: always
+    state: present
+    groups: sudo
+    append: yes
+    shell: /bin/bash
+  when: ansible_distribution in ['Debian', 'Ubuntu']
+  tags:
+    - add_disaster
+
+- name: Create ~/.ssh dir
+  ansible.builtin.file:
+    path: /root/.ssh
+    state: directory
+  tags:
+    - key_home
+
+- name: Remove root/.ssh/known_host
+  ansible.builtin.command: truncate -s 0 /root/.ssh/known_hosts
+  ignore_errors: true
+  tags:
+    - key
+    - empty_known_hosts
+
+- name: Add ansible "managment.pub"
+  ansible.builtin.copy:
+    src: files/ansible-publickey
+    dest: /root/.ssh/authorized_keys
+    owner: root
+    group: root
+    mode: "0600"
+  tags:
+    - key
+    - add_pub_key
+
+- name: Change root password
+  ansible.builtin.user:
     name: root
-    password: {{root_password}}
-    status: present
-  tags: [change_root_password]
+    update_password: always
+    password: "{{ root_password | string | password_hash('sha512') }}"
+  tags:
+    - change_root_password

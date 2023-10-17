@@ -1,0 +1,98 @@
+---
+# tasks file for node-exporter
+
+#################################################################################
+#         START PLAYBOOK WITH TAGS CONTROL AND INCLUDE VARIABLE INVENTORY       #
+#################################################################################
+
+### if you run this role with out tags this part stop the running playbook
+- name: "check tags for running roles"
+  fail:
+    msg: "you should use tags to run playbook"
+  when: 
+    - ( 'all' in ansible_run_tags or not ansible_run_tags ) # if playbook run with "all" tags OR run with out tags # if use anible playbook tags use this condition - ( 'all' in ansible_playbook_tags or not ansible_playbook_tags" )
+
+
+- name: install node_exporter
+  block:
+
+    - name: create groups
+      group:
+        name: node_exporter
+        state: present
+
+    - name: create users
+      user:
+        name: node_exporter
+        create_home: false
+        group: node_exporter
+        state: present
+        shell: /bin/false
+
+    - name: Copy file node-exporter binary with owner and permissions
+      copy:
+        src: node_exporter
+        dest: /usr/local/bin/node_exporter
+        owner: node_exporter
+        group: node_exporter
+        mode: '755'
+
+    - name: Copy file systemd
+      copy:
+        src: node_exporter.service
+        dest: /etc/systemd/system/
+
+    - name: Restart Service node-exporter
+      systemd:
+        name: "node_exporter"
+        state: started
+        enabled: true
+        daemon_reload: true
+      register: systemd_node_exporter
+
+    - name: Make sure service has time to start or stop
+      pause:
+        seconds: 5
+
+    - name: Print Status node-exporter systemd 
+      debug:
+        msg: "status:{{ systemd_node_exporter.state }}\nenable:{{ systemd_node_exporter.enabled }}"
+  
+  tags:
+    - install_node_exporter
+
+- name: upgrade node_exporter
+  block:
+
+    - name: Stop Service node-exporter
+      systemd:
+        name: "node_exporter"
+        state: stopped
+      register: systemd_node_exporter_disable
+
+    - name: Print Status node-exporter systemd 
+      debug:
+        msg: "status:{{ systemd_node_exporter_disable.state }}"
+
+    - name: Copy file node-exporter binary with owner and permissions
+      copy:
+        src: node_exporter
+        dest: /usr/local/bin/node_exporter
+        owner: node_exporter
+        group: node_exporter
+        mode: '755'
+
+    - name: Restart Service node-exporter
+      systemd:
+        name: "node_exporter"
+        state: started
+        enabled: true
+        daemon_reload: true
+      register: systemd_node_exporter
+
+    - name: Print Status node-exporter systemd 
+      debug:
+        msg: "status:{{ systemd_node_exporter.state }}\nenable:{{ systemd_node_exporter.enabled }}"
+
+  tags:
+    - upgrade_node_exporter

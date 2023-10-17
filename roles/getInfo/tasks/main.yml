@@ -1,0 +1,96 @@
+---
+#################################################################################
+#                     START PLAYBOOK WITH TAGS CONTROL                          #
+#################################################################################
+
+### if you run this role with out tags this part stop the running playbook
+- name: "check tags for running roles"
+  fail:
+    msg: "you should use tags to run playbook"
+  when: 
+    - ( 'all' in ansible_run_tags or not ansible_run_tags ) # if playbook run with "all" tags OR run with out tags # if use anible playbook tags use this condition - ( 'all' in ansible_playbook_tags or not ansible_playbook_tags" )
+
+- name: gather facts send data
+  block:
+
+    - name: "Delete file {{ role_path }}/files/matter_data"
+      file:
+        state: absent
+        path: "{{ role_path }}/files/matter_data"
+      delegate_to: localhost
+      run_once: true
+
+    - set_fact:
+        my_devices: "{{ ansible_devices.keys()|
+                        select('match', '^sd(.*)$')|
+                        list }}"
+
+    - name: Get all mount points as a list
+      set_fact:
+        mount: "{{ ansible_mounts | first }}"
+
+    - name: Disk usage calculation
+      set_fact: 
+        disk_usage="{{ mount.size_total - mount.size_available }}"
+
+    - name: Disk usage calculation in GB
+      set_fact:
+        disk_usage_s="{{ (disk_usage|float / 1000000000) | round(1, 'common') }}GB"
+        
+    - name: Total disk calculation in GB
+      set_fact:
+        disk_total_s="{{ (mount.size_total / 1000000000) | round(1, 'common') }}GB"
+                    
+    - name: Get cpu usage
+      shell: |
+        top -bn1 | awk -F "," '/Cpu/ {print $4}' | awk '{print 100 - $1}'
+      register: cpu_usage
+
+    - name: Get cpu usage
+      shell: |
+        df -hT -x squashfs -x overlay -x tmpfs -x devtmpfs | tail -n +2 | awk '{print "Diks: "$1", Mounted at: "$NF", Usage: "$6}'
+      register: disk_usage
+
+        #|{{ (ansible_memtotal_mb / 1024 ) | round(2) }} GB \
+    - name: "collect data in {{ role_path | basename }}/files/matter_data"
+      lineinfile:
+        path: "{{ role_path }}/files/matter_data"
+        line: "|{{ ansible_distribution }}|{{ ansible_distribution_version }}\
+              |{{ ansible_hostname }}|{{ ansible_default_ipv4.address }}\
+              |{{ ((ansible_memtotal_mb - ansible_memfree_mb) / 1024 ) | round(2) }} GB / {{ (ansible_memtotal_mb / 1024 ) | round(2) }} GB \
+              |{{ ansible_processor_vcpus }} | {{ cpu_usage.stdout_lines[0] }}% \
+              |{% for disk in my_devices %}**{{ disk }}:**{{ ansible_devices[disk].size }} {% endfor %} \ 
+              | {{ disk_usage.stdout_lines }}|"
+        create: true
+      delegate_to: localhost  
+
+        #| {{ disk_usage_s }} / {{disk_total_s}} |"
+    - name: "append data in first line"
+      lineinfile:
+        path: "{{ role_path }}/files/matter_data"
+        line: "### {{ inventory_file | basename }}\n\
+                |OS_Dist|OS_Dist_version|Hostname|IP_Address|Ram|Cpu(s)|Cpu usage|Disks|Disks usage|\ 
+                \n|---|---|---|---|---|---|---|----|"
+        create: true
+        insertafter: BOF
+      delegate_to: localhost
+      run_once: true
+
+    - name: "file lookup {{ role_path }}/files/matter_data"
+      debug:
+        msg: "{{lookup('ansible.builtin.file', '{{ role_path }}/files/matter_data') }}"
+      delegate_to: localhost
+      run_once: true
+      register: view
+
+    - name: Send notification message via Mattermost all options
+      mattermost:
+        url: https://chat.vaslapp.com
+        api_key: zi8q8idge3guzet4zmh7rp59qh
+        text: '{{ view.msg }}'
+        channel: '{{ matter_channel }}'
+        username: 'Ansible'
+      delegate_to: localhost
+      run_once: true
+  tags:
+    - getinfo_send_mattermost

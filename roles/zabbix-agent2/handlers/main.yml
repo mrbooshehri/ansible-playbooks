@@ -1,0 +1,24 @@
+---
+# handlers file for zabbix-agent22
+- name: restart zabbix-agent2
+  systemd:
+    name: zabbix-agent2
+    state: restarted
+    enabled: yes
+  listen: restart zabbix-agent2
+
+- name: start zabbix-agent2
+  systemd:
+    name: zabbix-agent2
+    state: started
+    enabled: yes
+  listen: start zabbix-agent2
+
+- name: stop zabbix-agent2
+  systemd:
+    name: zabbix-agent2
+    state: stopped
+    enabled: no
+  listen: stop zabbix-agent2
+
+# notify: restart/start/stop zabbix-agent2

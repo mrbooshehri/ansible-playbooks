@@ -1,4 +1,11 @@
 ---
+### if you run this role with out tags this part stop the running playbook
+- name: "check tags for running roles"
+  fail:
+    msg: "you should use tags to run playbook"
+  when: 
+    - ( 'all' in ansible_run_tags or not ansible_run_tags ) # if playbook run with "all" tags OR run with out tags # if use anible playbook tags use this condition - ( 'all' in ansible_playbook_tags or not ansible_playbook_tags" )
+
 ############################################################ Deb
 - name: Ubuntu/Debian
   when: ansible_distribution in ["Ubuntu", "debian"]
@@ -45,19 +52,8 @@
       loop:
         - net-tools
         - vim
-        - tmux
-        - telnet
-        - tcpdump
-        - wget
-        - jq
-        - curl
-        - open-vm-tools
-        - iftop
-        - traceroute
-        - htop 
-        - nmap
-        - nethogs
-        - netcat
+  tags:
+    - add_repo
   
 ############################################################ Rpm
 
@@ -96,6 +92,61 @@
       loop:
         - net-tools
         - vim
+
+  tags:
+    - add_repo
+
+
+
+- name: "RPM: install custom packages"
+  debug:
+    msg:  "{{ ansible_distribution }}"
+  when: ansible_distribution != 'Rocky' or ansible_distribution != 'CentOS' or ansible_distribution not in ["Ubuntu", "debian"]
+  tags:
+    - install_packages
+
+- name: "DEB: install custom packages"
+  when: ansible_distribution in ["Ubuntu", "debian"]
+  ignore_errors: true
+  block:
+     
+    - name: "DEB: Install necessary packages"
+      apt:
+        name: "{{ item }}"
+        update_cache: true
+        state: present
+      loop:
+        - net-tools
+        - vim
+        - tmux
+        - telnet
+        - tcpdump
+        - wget
+        - jq
+        - curl
+        - open-vm-tools
+        - iftop
+        - traceroute
+        - htop 
+        - nmap
+        - nethogs
+        - netcat
+  tags:
+    - install_packages
+
+- name: "RPM: install custom packages"
+  when: ansible_distribution == 'Rocky' or ansible_distribution == 'CentOS'
+  ignore_errors: true
+  block:
+
+    - name: "RPM: Update yum cache"
+      yum:
+        name: "{{ item }}"
+        update_cache: true
+        state: present
+      loop:
+        - net-tools
+        - vim
         - tmux
         - telnet
         - tcpdump
@@ -110,37 +161,5 @@
         - nethogs
         - netcat
 
-############################################################ docker
-#- name: dokcer
-#  block:
-#    - name: Block docker.io
-#      lineinfile:
-#        path: "/etc/hosts"
-#        regexp: "^127.0.0.1 registry-1.docker.io"
-#        line: |
-#          127.0.0.1 registry-1.docker.io
-#        insertafter: EOF
-#        backup: true
-#      tags:
-#        - history_timestamp
-#
-#    - name: Change dokcer regisry
-#      template:
-#        src: daemon.json.j2
-#        dest: /etc/docker/daemon.json
-#      tags:
-#        - copy_docker_conf
-#
-#    - name: Log into private registry and force re-authorization
-#      docker_login:
-#        registry: https://registry.vaslapp.com
-#        username: "{{ DOCKER_USERNAME }}"
-#        password: "{{ DOCKER_PASSWORD }}"
-#        reauthorize: yes
-#
-#    - name: Stop docker docker.service
-#      systmed:
-#        name: docker
-#        state: restarted
-#      tags:
-#        - restart_docker
+  tags:
+    - install_packages

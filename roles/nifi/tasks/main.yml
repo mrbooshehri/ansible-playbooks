@@ -1,0 +1,64 @@
+---
+- name: Install OpenJDK 11 on Ubuntu/Debian
+  apt:
+    name: openjdk-11-jdk
+    state: present
+  when: ansible_distribution == 'Ubuntu' or ansible_distribution == 'Debian'
+  tags:
+    - java_install
+
+- name: Install unzip
+  yum:
+    name: unzip
+    state: present
+  tags:
+    - unzip_install
+
+- name: Install OpenJDK 11 on Red Hat/CentOS
+  yum:
+    name: java-11-openjdk-devel
+    state: present
+  when: ansible_distribution == 'RedHat' or ansible_distribution == 'CentOS'
+  tags:
+    - java_install
+
+- name: Create nifi user
+  user:
+    name: "{{ NIFI_USER }}"
+    state: present
+    shell: /sbin/nologin
+  tags:
+    - add_user
+
+- name: Create nifi home
+  file:
+    path: "{{ NIFI_HOME }}"
+    state: directory
+    owner: "{{ NIFI_USER }}"
+  tags:
+    - create_home
+
+- name: Copy and unarchive nifi
+  unarchive:
+    src: "{{ NIFI_ARCHIVE }}"
+    dest: "{{ NIFI_HOME }}"
+    owner: "{{ NIFI_USER }}"
+    group: "{{ NIFI_USER }}"
+  tags:
+    - unzip
+
+- name: Add systemd nifi.service unit
+  template:
+    src: nifi.service.j2
+    dest: /etc/systemd/system/nifi.service
+  tags:
+    - add_systemd_unit
+
+- name: Enable and start nifi.service
+  systemd:
+    name: nifi.service
+    enabled: true
+    state: started
+    daemon_reload: true
+  tags:
+    - start_service

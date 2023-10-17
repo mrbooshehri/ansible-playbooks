@@ -4,7 +4,6 @@
     registry: registry.vaslapp.com
     username: "{{ DOCKER_USERNAME }}"
     password: "{{ DOCKER_PASSWORD }}"
-      #password: "{{ DOCKER_PASSWORD | string | password_hash('sha512') }}"
   tags:
     - login_registry
 

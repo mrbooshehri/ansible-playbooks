@@ -1,0 +1,7 @@
+---
+# defaults file for zabbix-agent2
+ip_passive: 192.168.66.58,192.168.136.217
+rpm_dir: /root/
+script_dir: /support/
+disk_path: /home/hani/Repos/git.vaslapp.com/zabbix/Disk-cleanup/
+#port_path: /home/hani/Repos/git.vaslapp.com/zabbix/

@@ -4,3 +4,12 @@ MINIO_DATA_DIR: "/mnt"
 MINIO_VOLUMES:
   - data
 MINIO_CONSOL_PORT: 9001
+MINIO_HOSTS:
+  - hostname: minio-01
+    ip: 192.168.136.32
+  - hostname: minio-02
+    ip: 192.168.136.33
+  - hostname: minio-03
+    ip: 192.168.136.34
+  - hostname: minio-04
+    ip: 192.168.136.35

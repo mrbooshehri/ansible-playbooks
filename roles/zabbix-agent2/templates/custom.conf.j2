@@ -1,0 +1,11 @@
+# user parametr for collect data
+UserParameter=ss.tcp.listening,netstat --tcp --listening --numeric-ports | grep -E -w '9200|9300|5601|9700|9600|5044|27019|27017|3306|6379|808.*|8090|443|80|10050|10051|10052|9092|26873|10257|10259|10250|2379|2380|6443'
+
+# agent allowkey for running script
+AllowKey=system.run[sudo bash /support/*.sh,*]
+
+# agent time out
+Timeout=30
+
+# agent passive & active
+Server={{ ip_passive }}

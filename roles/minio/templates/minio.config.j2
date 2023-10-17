@@ -2,4 +2,8 @@ MINIO_ACCESS_KEY={{ MINIO_ACCESS_KEY }}
 MINIO_SECRET_KEY={{ MINIO_SECRET_KEY }}
 MINIO_VOLUMES={{ MINIO_DATA_DIR }}
 MINIO_VOLUMES="{% for VOLUME in MINIO_VOLUMES %}{{MINIO_DATA_DIR}}/{{ VOLUME }} {% endfor %}"
-MINIO_OPTS="--address {{ansible_default_ipv4.address}}:9000 --console-address :{{MINIO_CONSOL_PORT}}"
+{% if MINIO_HOSTS | length == 1 %}
+MINIO_OPTS: "http://minio-01:9000 --console-address :{{ MINIO_CONSOL_PORT }}"
+{% else %}
+MINIO_OPTS: "--address http://minio-0{1...{{ MINIO_HOSTS | length }} }:9000 --console-address :{{ MINIO_CONSOL_PORT }}"
+{% endif %}

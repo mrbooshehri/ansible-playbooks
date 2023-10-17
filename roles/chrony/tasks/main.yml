@@ -1,0 +1,87 @@
+---
+#################################################################################
+#         START PLAYBOOK WITH TAGS CONTROL AND INCLUDE VARIABLE INVENTORY       #
+#################################################################################
+
+### if you run this role with out tags this part stop the running playbook
+- name: "check tags for running roles"
+  fail:
+    msg: "you should use tags to run playbook"
+  when: 
+    - ( 'all' in ansible_run_tags or not ansible_run_tags ) # if playbook run with "all" tags OR run with out tags # if use anible playbook tags use this condition - ( 'all' in ansible_playbook_tags or not ansible_playbook_tags" )
+
+################################################################################
+- name: set time zon in Asia tehran +0330
+  block: 
+
+    - name: set timezone to Asia/Tehran
+      timezone:
+        name: Asia/Tehran
+
+    - name: copy Tehran file
+      copy:
+        src: Tehran
+        dest: /usr/share/zoneinfo/Asia/Tehran
+
+  tags:
+    - set_time_zoon
+    - install
+
+- name: install chrony
+  block: 
+   
+    - name: install chrony deb
+      apt: 
+        name: chrony
+        state: latest
+      register: apt_chrony_output
+      when:
+        - ( ansible_facts['distribution'] == "Ubuntu" )
+
+    - name: install chrony rpm
+      yum:
+        name: chrony
+        state: latest
+      register: yum_chrony_output
+      when:
+        - ( ansible_distribution in ['CentOS', 'RedHat', 'OracleLinux' ,'Rocky'] )
+
+    - name: copy chrony.conf from template
+      template:
+        src: "{{ 'centos_chrony.conf.j2' if ansible_distribution in ['CentOS', 'RedHat', 'OracleLinux' ,'Rocky'] else 'ubuntu_chrony.conf.j2' }}"
+        dest: "{{ '/etc/chrony.conf' if ansible_distribution in ['CentOS', 'RedHat', 'OracleLinux' ,'Rocky'] else '/etc/chrony/chrony.conf' }}"
+        mode: '644'
+
+    - name: Restart Service Chrony
+      systemd:
+        name: "{{ 'chronyd' if ansible_distribution in ['CentOS', 'RedHat', 'OracleLinux' ,'Rocky'] else 'chrony' }}"
+        state: restarted
+        enabled: true
+      ignore_errors: true
+      register: systemd_chrony
+
+    - name: Print Status Chrony systemd 
+      debug:
+        msg: "status:{{ systemd_chrony.state }}\nenable:{{ systemd_chrony.enabled }}"
+  
+  tags:
+    - install
+
+- name: check chrony status
+  block:
+
+    - name: Make sure service has time to start or stop
+      pause:
+        seconds: 5
+
+    - name: chrony status 
+      shell: chronyc tracking | grep -E '^Reference|^Leap|interval'
+      register: time
+
+    - name: print chrony status
+      debug:
+        msg: "{{ time.stdout_lines }}"
+
+  tags:
+    - chronyc_status
+    - install

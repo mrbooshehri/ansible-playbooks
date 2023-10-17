@@ -1,0 +1,12 @@
+[Unit]
+Description=Apache NiFi
+
+[Service]
+User=nifi
+Group=nifi
+ExecStart={{ NIFI_HOME }}/bin/nifi.sh start
+ExecStop={{ NIFI_HOME }}/bin/nifi.sh stop
+WorkingDirectory={{ NIFI_HOME }}/nifi
+
+[Install]
+WantedBy=multi-user.target

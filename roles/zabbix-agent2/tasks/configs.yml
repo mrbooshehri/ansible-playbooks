@@ -1,0 +1,32 @@
+---
+# copy agent-config and custom-config
+
+- name: Delete file run-scripts.conf and ss.tcp.listening.conf
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+      - /etc/zabbix/zabbix_agent2.d/run-scripts.conf
+      - /etc/zabbix/zabbix_agent2.d/ss.tcp.listening.conf
+  tags:
+  - config
+  - config_agent
+
+- name: " copy custom config to zabbix_agent2.d/ "
+  template:
+    src: custom.conf.j2
+    dest: /etc/zabbix/zabbix_agent2.d/custom.conf
+  notify: restart zabbix-agent2
+  tags:
+  - config
+  - config_agent
+
+- name: " copy zabbix_agent.conf "
+  template:
+    src: zabbix_agent2.conf.j2
+    dest: /etc/zabbix/zabbix_agent2.conf
+  notify: restart zabbix-agent2
+  tags:
+  - config
+  - config_agent
+

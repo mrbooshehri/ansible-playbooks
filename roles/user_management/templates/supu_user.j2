@@ -1,0 +1,11 @@
+Cmnd_Alias      SUPU_VAR_LOG = /bin/rm  /var/log/*, /bin/rm * /var/log/*, /bin/truncate -s 0 /var/log/*
+
+Cmnd_Alias      SUPU_SINGLE_CMD = /bin/systemctl, /bin/journalctl, /bin/netstat, \
+/bin/timedatectl, /bin/touch, /bin/tail, /bin/head, /bin/cd, /bin/ls, /bin/du, /bin/df, \
+/bin/lsblk, /bin/find, /bin/less, /bin/grep, /bin/pstree, /sbin/blkid, /sbin/lvdisplay, /sbin/vgdisplay, /sbin/pvdisplay
+
+Cmnd_Alias      SUPU_REBOOT_CMD = /sbin/reboot
+
+Cmnd_Alias      SUPU_SCRIPT_CMD = /bin/bash /support/*cleanup.sh
+
+supu ALL=(ALL) NOPASSWD:SUPU_VAR_LOG,SUPU_SINGLE_CMD,SUPU_REBOOT_CMD,SUPU_SCRIPT_CMD

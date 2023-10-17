@@ -1,0 +1,3 @@
+---
+# vars file for roles/key_management
+devops_public_key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIhi0sX3mgZav8BxViTuT9U32aHYD/lIvFlnghZ4zJ7G mhmd@mhmd

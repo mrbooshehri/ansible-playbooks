@@ -1,0 +1,138 @@
+---
+#################################################################################
+#         START PLAYBOOK WITH TAGS CONTROL AND INCLUDE VARIABLE INVENTORY       #
+#################################################################################
+
+### if you run this role with out tags this part stop the running playbook
+- name: "check tags for running roles"
+  fail:
+    msg: "you should use tags to run playbook"
+  when: 
+    - ( 'all' in ansible_run_tags or not ansible_run_tags ) # if playbook run with "all" tags OR run with out tags # if use anible playbook tags use this condition - ( 'all' in ansible_playbook_tags or not ansible_playbook_tags" )
+
+- name: "include vars"
+  include_vars: "{{ inventory_file | basename }}.yaml"
+  tags:
+    - create_users_on_vars
+    - change_diaster_password
+    - change_root_password
+    - copy_sudoers_file
+      
+#################################################################################
+#                      CREATE USER GROUP AND CREATE DIR 
+#################################################################################
+
+- name: create user and groups in vars
+  block:
+
+    - name: create groups
+      group:
+        name: "{{ item.username }}"
+        state: present
+      loop: "{{ users }}"
+
+    - name: create users
+      user:
+        name: "{{ item.username }}"
+        create_home: true
+        password: "{{ item.password | string | password_hash('sha512') }}"
+        update_password: always
+        group: "{{ item.username }}"
+        groups: "{{ item.groups | default([]) }}"
+        state: present
+        append: true
+        shell: "{{ item.shell }}"
+      loop: "{{ users }}" 
+
+  when:
+    - ( item.inv == 'ok' or ansible_host in item.ip | default([]) ) # check item exist in custom inv on vars directory OR ansible host exist in ip list on vars directory
+  tags:
+    - create_users_on_vars
+
+- name: start control user access
+  block:
+
+    - name: Chmod /etc/sudoers.d directory 
+      file:
+        path: /etc/sudoers.d
+        mode: '710'
+
+    - name: Create a sudoers file from a template
+      template:
+        src: "{{ item.username }}_user.j2"
+        dest: "/etc/sudoers.d/{{ item.username }}_user"
+        mode: '700'
+      loop: "{{ users }}"
+      when: 
+        - ( item.username == 'devops' or item.username == 'supu' or item.username == 'mgnu' or item.username == 'supmu' or item.username == 'datau' or item.username == 'servu' ) and ( item.inv == 'ok' or ansible_host in item.ip | default([]) ) # when username equal devops run this task
+  
+  tags:
+    - create_users_on_vars
+    - copy_sudoers_file
+
+#################################################################################
+#                   ACTIVE ROOT LOGIN AND UPDATE ROOT PASSWORD
+#################################################################################
+
+- name: root user control access
+  block:
+
+    - name: Allow root login in SSH server configuration
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?\s*PermitRootLogin'
+        line: 'PermitRootLogin yes'
+        backup: yes
+      notify: Restart SSH
+
+    - name: Change root password
+      user:
+        name: root
+        update_password: always
+        password: "{{ item.password | string | password_hash('sha512') }}"
+      loop: "{{ root_user }}"
+  
+  tags:
+    - change_root_password
+
+#################################################################################
+#                            UPDATE DISASTER PASSWORD
+#################################################################################
+ 
+- name: create disaster user
+  block:
+
+#    - name: create disaster group
+#      group:
+#        name: "{{ item.username }}"
+#        state: present
+#      loop: "{{ disaster_user }}"
+
+    - name: create disaster user
+      user:
+        name: "{{ item.username }}"
+        create_home: false
+        password: "{{ item.password | string | password_hash('sha512') }}"
+        update_password: always
+        group: "{{ item.group }}"
+        groups: "{{ item.groups | default([]) }}"
+        state: present
+        append: true
+        shell: "{{ item.shell }}"
+      loop: "{{ disaster_user }}"
+    
+  tags:
+    - change_diaster_password
+
+#################################################################################
+#         DELETE USERS GROUPS AND CHANGES OLD USER HOME DIRECTORY 
+#################################################################################
+
+- name: delete user in hosts
+  user:
+    name: "{{ item }}"
+    state: absent
+    remove: true
+  loop: "{{ delete_user.split(',') }}"
+  tags:
+    - single_or_multi_delete_user

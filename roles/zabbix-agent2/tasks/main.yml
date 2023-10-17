@@ -1,0 +1,36 @@
+---
+
+- include_tasks: check-os-version.yml
+  tags:
+    - check_os
+    - always 
+
+#- include_tasks: firewall.yml
+#  tags:
+#    - firewall
+#    - firewall_ufw
+#    - firewall_firewalld
+#  when:
+#    - ansible_facts['os_family'] == ["Debian" , "CentOS"]
+
+- include_tasks: copy-rpm-file.yml
+  tags:
+    - install 
+- include_tasks: install-rpm-file.yml
+  tags:
+    - install
+- include_tasks: configs.yml
+  tags:
+    - config
+    - config_agent
+- include_tasks: copy-scripts.yml
+  tags:
+    - config
+    - config_script
+    - config_script_app
+    - config_script_kub
+    - config_script_elk
+    - config_script_mongo
+    - config_script_kafka
+    - config_script_ha
+    - config_script_redis 

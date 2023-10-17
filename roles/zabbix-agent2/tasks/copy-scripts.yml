@@ -1,0 +1,122 @@
+---
+# custom scripts for actions
+- name:  "Create a directory {{ script_dir }} if it does not exist"
+  file:
+    path: "{{ script_dir }}"
+    state: directory
+  tags:
+  - config
+  - config_script
+  - config_script_app
+  - config_script_kub
+  - config_script_elk
+  - config_script_mongo
+  - config_script_kafka
+  - config_script_ha
+  - config_script_redis
+
+- name: " copy script file to app"
+  copy:
+    src: "{{ item }}"
+    dest: "{{ script_dir }}"
+    mode: ugo=rx
+  with_items:
+    - "{{ disk_path }}App-cleanup.sh"
+      #    - "{{ port_path }}"
+  notify: restart zabbix-agent2
+  when: "'app' in group_names"
+  tags:
+  - config
+  - config_script
+  - config_script_app
+
+- name: " copy script file to kub"
+  copy:
+    src: "{{ item }}"
+    dest: "{{ script_dir }}"
+    mode: ugo=rx
+  with_items:
+    - "{{ disk_path }}Kuber-cleanup.sh"
+      #    - "{{ port_path }}"
+  notify: restart zabbix-agent2
+  when: "'kub' in group_names"
+  tags:
+  - config
+  - config_script
+  - config_script_kub
+
+- name: " copy script file to elk"
+  copy:
+    src: "{{ item }}"
+    dest: "{{ script_dir }}"
+    mode: ugo=rx
+  with_items:
+    - "{{ disk_path }}ELK-cleanup.sh"
+      #    - "{{ port_path }}"
+  notify: restart zabbix-agent2
+  when: "'elk' in group_names"
+  tags:
+  - config
+  - config_script
+  - config_script_elk
+
+- name: " copy script file to mongo"
+  copy:
+    src: "{{ item }}"
+    dest: "{{ script_dir }}"
+    mode: ugo=rx
+  with_items:
+    - "{{ disk_path }}Mongo-cleanup.sh"
+      #    - "{{ port_path }}"
+  notify: restart zabbix-agent2
+  when: "'mongo' in group_names"
+  tags:
+  - config
+  - config_script
+  - config_script_mongo
+
+- name: " copy script file to kafka"
+  copy:
+    src: "{{ item }}"
+    dest: "{{ script_dir }}"
+    mode: ugo=rx
+  with_items:
+    - "{{ disk_path }}Kafka-cleanup.sh"
+      #    - "{{ port_path }}"
+  notify: restart zabbix-agent2
+  when: "'kafka' in group_names"
+  tags:
+  - config
+  - config_script
+  - config_script_kafka
+
+- name: " copy script file to ha"
+  copy:
+    src: "{{ item }}"
+    dest: "{{ script_dir }}"
+    mode: ugo=rx
+  with_items:
+    - "{{ disk_path }}Haproxy-cleanup.sh"
+      #    - "{{ port_path }}"
+  notify: restart zabbix-agent2
+  when: "'ha' in group_names"
+  tags:
+  - config
+  - config_script
+  - config_script_ha
+
+- name: " copy script file to redis"
+  copy:
+    src: "{{ item }}"
+    dest: "{{ script_dir }}"
+    mode: ugo=rx
+  with_items:
+    - "{{ disk_path }}Redis-cleanup.sh"
+      #    - "{{ port_path }}"
+  notify: restart zabbix-agent2
+  when: "'redis' in group_names"
+  tags:
+  - config
+  - config_script
+  - config_script_redis
+
